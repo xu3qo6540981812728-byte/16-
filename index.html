@@ -917,7 +917,7 @@
 
                     // Generate poster image after a short delay for rendering
                     setTimeout(async () => {
-                        const canvas = await html2canvas(cardTemplate, { useCORS: true, scale: 2, backgroundColor: null });
+                        const canvas = await html2canvas(cardTemplate, { useCORS: true, scale: 4, backgroundColor: null });
                         const imageUrl = canvas.toDataURL('image/png');
                         posterImageContainerBusiness.innerHTML = `<img src="${imageUrl}" alt="客戶名片海報" class="w-full h-auto">`;
                         downloadPosterBtnBusiness.href = imageUrl;
@@ -997,6 +997,7 @@
     </script>
 </body>
 </html>
+
 
 
 
