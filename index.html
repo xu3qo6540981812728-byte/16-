@@ -696,6 +696,7 @@
                 const photoFile = form.elements['agent-photo'].files[0];
                 const qrcodeFile = form.elements['agent-qrcode'].files[0];
 
+                // --- 階段一：前端資料驗證 ---
                 if (!croppedPhotoDataUrl || !photoFile) {
                     alert('請務必上傳並確認裁切您的個人形象照！');
                     return;
@@ -711,10 +712,23 @@
                 
                 showLoader('資料上傳中，並為您生成海報...');
 
+                // --- 階段二：讀取 QR Code 檔案 (獨立錯誤監控) ---
+                let qrcodeDataUrl;
                 try {
-                    const qrcodeDataUrl = await readFileAsDataURL(qrcodeFile);
+                    qrcodeDataUrl = await readFileAsDataURL(qrcodeFile);
+                } catch (error) {
+                    console.error('讀取 QR Code 圖片失敗:', error);
+                    alert('讀取 QR Code 圖片時發生錯誤，請確認檔案格式是否正確，或嘗試使用另一張圖片。');
+                    hideLoader();
+                    return; // 讀取失敗，中止執行
+                }
+
+                // --- 階段三：生成海報並提交 (獨立錯誤監控) ---
+                try {
                     const report = resultReport;
                     const cardTemplate = document.getElementById('business-card-template');
+                    
+                    // 填充海報模板
                     cardTemplate.innerHTML = `
                         <div class="w-full h-full p-5 flex flex-col justify-between relative font-sans" style="background: radial-gradient(circle, #4a4a4a 0%, #1a1a1a 100%);">
                             <div class="absolute top-0 left-0 w-full h-full opacity-5" style="background-image: url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.4%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
@@ -742,11 +756,14 @@
                                 </div>
                             </div>
                         </div>`;
+                    
                     lucide.createIcons();
+                    
                     await fetch("/", {
                         method: "POST",
                         body: formData,
                     });
+
                     setTimeout(async () => {
                         try {
                             const canvas = await html2canvas(cardTemplate, { useCORS: true, scale: 2, backgroundColor: '#1a1a1a' });
@@ -755,17 +772,18 @@
                             downloadPosterBtnBusiness.href = imageUrl;
                             businessCardModal.style.display = 'none';
                             posterModalBusiness.style.display = 'flex';
-                            resetBusinessCardForm(); // Reset form after success
+                            resetBusinessCardForm();
                         } catch (canvasError) {
-                            console.error('名片海報生成失敗:', canvasError);
-                            alert('抱歉，名片海報生成失敗，請稍後再試。');
+                            console.error('名片海報 Canvas 生成失敗:', canvasError);
+                            alert('抱歉，繪製海報時發生錯誤，請稍後再試。');
                         } finally {
                             hideLoader();
                         }
                     }, 500);
-                } catch (fileReadError) {
-                    console.error('讀取圖片失敗:', fileReadError);
-                    alert('讀取 QR Code 圖片時發生錯誤，請確認檔案格式是否正確。');
+
+                } catch (generalError) {
+                    console.error('生成海報或提交表單時發生錯誤:', generalError);
+                    alert('生成海報或提交表單時發生未預期的錯誤，請檢查所有欄位後再試一次。');
                     hideLoader();
                 }
             };
@@ -816,5 +834,6 @@
 </body>
 </html>
 }
+
 
 
