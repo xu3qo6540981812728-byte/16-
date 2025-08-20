@@ -17,7 +17,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
         window.firebase = {
             initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
             onAuthStateChanged, getFirestore, doc, setDoc
@@ -63,6 +62,30 @@
             border-color: #4f46e5;
             box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
         }
+        /* Style for file input */
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background-color: white;
+            cursor: pointer;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-input-text {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #4b5563;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -100,7 +123,7 @@
     </div>
 
     <div id="business-card-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all" style="animation: fadeIn 0.3s ease-out;">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all overflow-y-auto max-h-screen" style="animation: fadeIn 0.3s ease-out;">
             <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">製作您的客戶名片海報</h2>
             <form id="business-card-form" name="business-card-leads" method="POST" data-netlify="true">
                 <input type="hidden" name="form-name" value="business-card-leads" />
@@ -111,6 +134,14 @@
                         <input type="text" id="agent-name" name="agent-name" class="form-input" placeholder="例如: 王小明" required>
                     </div>
                     <div>
+                        <label for="agent-title" class="block text-sm font-medium text-gray-700 mb-1">您的職稱</label>
+                        <input type="text" id="agent-title" name="agent-title" class="form-input" placeholder="例如: 營業員 / 經理" required>
+                    </div>
+                    <div>
+                        <label for="agent-company" class="block text-sm font-medium text-gray-700 mb-1">房仲品牌/公司</label>
+                        <input type="text" id="agent-company" name="agent-company" class="form-input" placeholder="例如: XX房屋 中壢A7店" required>
+                    </div>
+                    <div>
                         <label for="agent-phone" class="block text-sm font-medium text-gray-700 mb-1">聯絡電話</label>
                         <input type="tel" id="agent-phone" name="agent-phone" class="form-input" placeholder="例如: 0912-345-678" required>
                     </div>
@@ -118,9 +149,25 @@
                         <label for="agent-lineid" class="block text-sm font-medium text-gray-700 mb-1">LINE ID</label>
                         <input type="text" id="agent-lineid" name="agent-lineid" class="form-input" placeholder="例如: mylineid" required>
                     </div>
-                    <div>
-                        <label for="agent-company" class="block text-sm font-medium text-gray-700 mb-1">房仲品牌/公司</label>
-                        <input type="text" id="agent-company" name="agent-company" class="form-input" placeholder="例如: XX房屋 中壢A7店" required>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-1/2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">個人形象照</label>
+                             <div class="file-input-wrapper">
+                                <span id="agent-photo-text" class="file-input-text">選擇檔案</span>
+                                <input type="file" id="agent-photo" name="agent-photo" accept="image/*" required>
+                             </div>
+                        </div>
+                        <img id="photo-preview" src="https://via.placeholder.com/100" alt="Photo Preview" class="w-24 h-24 rounded-full object-cover bg-gray-200">
+                    </div>
+                     <div class="flex items-center space-x-4">
+                        <div class="w-1/2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">個人QR Code</label>
+                             <div class="file-input-wrapper">
+                                <span id="agent-qrcode-text" class="file-input-text">選擇檔案</span>
+                                <input type="file" id="agent-qrcode" name="agent-qrcode" accept="image/*" required>
+                            </div>
+                        </div>
+                        <img id="qrcode-preview" src="https://via.placeholder.com/100" alt="QR Code Preview" class="w-24 h-24 object-contain bg-gray-200 p-1">
                     </div>
                 </div>
                 <div class="mt-8 flex gap-4">
@@ -130,7 +177,6 @@
             </form>
         </div>
     </div>
-    
     <div id="poster-modal-business" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center transform transition-all relative" style="animation: fadeIn 0.3s ease-out;">
             <button id="close-poster-modal-business" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
@@ -246,7 +292,7 @@
             let isGeminiLoading = false;
             let resultReport = {};
             let radarChartInstance = null;
-            let questions = []; // Questions will be fetched from backend
+            let questions = []; 
 
             // --- DOM ELEMENTS ---
             const introPage = document.getElementById('intro-page');
@@ -268,8 +314,7 @@
             const downloadPosterBtn = document.getElementById('download-poster-btn');
             const loadingModal = document.getElementById('loading-modal');
             const loadingText = document.getElementById('loading-text');
-
-            // === 新增: Business Card Modal Elements ===
+            // === MODIFICATION START: Business Card Modal Elements ===
             const businessCardModal = document.getElementById('business-card-modal');
             const closeBusinessCardModalBtn = document.getElementById('close-business-card-modal');
             const businessCardForm = document.getElementById('business-card-form');
@@ -277,6 +322,15 @@
             const closePosterModalBusinessBtn = document.getElementById('close-poster-modal-business');
             const posterImageContainerBusiness = document.getElementById('poster-image-container-business');
             const downloadPosterBtnBusiness = document.getElementById('download-poster-btn-business');
+            // File input previews
+            const agentPhotoInput = document.getElementById('agent-photo');
+            const photoPreview = document.getElementById('photo-preview');
+            const agentQrcodeInput = document.getElementById('agent-qrcode');
+            const qrcodePreview = document.getElementById('qrcode-preview');
+            const agentPhotoText = document.getElementById('agent-photo-text');
+            const agentQrcodeText = document.getElementById('agent-qrcode-text');
+            // === MODIFICATION END ===
+
 
             // --- FUNCTIONS ---
             
@@ -315,7 +369,6 @@
                     }
                 }
             };
-            
             const initializeQuiz = () => {
                 const savedResult = localStorage.getItem('mbtiQuizResult');
                 const savedProgress = localStorage.getItem('mbtiQuizProgress');
@@ -331,7 +384,6 @@
                     }
                 }
             };
-
             const switchPage = (pageId) => {
                 document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
                 document.getElementById(pageId).classList.add('active');
@@ -355,7 +407,6 @@
                         </div>
                         <h2 class="text-2xl font-bold text-gray-800 text-center">${question.text}</h2>
                 `;
-
                 if (question.type === 'mbti_choice') {
                     html += `<div class="space-y-4 w-full">`;
                     question.options.forEach(option => {
@@ -396,7 +447,6 @@
                         handleAnswer(questionId, value);
                     });
                 });
-
                 updateNavButtons();
             };
             
@@ -407,20 +457,18 @@
                     return;
                 }
                 
-                const percentages = report.strengths || {}; // Note: backend now sends 'strengths' object with percentages
+                const percentages = report.strengths || {}; 
                 const strengthLabels = {
                     E: { label: '外向', color: 'bg-blue-500' }, I: { label: '內向', color: 'bg-blue-400' },
                     S: { label: '實感', color: 'bg-green-500' }, N: { label: '直覺', color: 'bg-green-400' },
                     T: { label: '思考', color: 'bg-red-500' }, F: { label: '情感', color: 'bg-red-400' },
                     J: { label: '判斷', color: 'bg-yellow-500' }, P: { label: '感知', color: 'bg-yellow-400' }
                 };
-
                 let strengthChartHtml = '';
                 for (const pair of ['EI', 'SN', 'TF', 'JP']) {
                     const [trait1, trait2] = pair.split('');
                     const percent1 = percentages[pair]?.[trait1] || 50;
                     const percent2 = percentages[pair]?.[trait2] || 50;
-                    
                     strengthChartHtml += `
                         <div class="bar-wrapper">
                             <div class="label-left">${strengthLabels[trait1].label}</div>
@@ -516,7 +564,6 @@
                 document.getElementById('gemini-analysis-btn')?.addEventListener('click', handleGeminiAnalysis);
                 document.getElementById('generate-poster-btn').addEventListener('click', handleGeneratePoster);
                 document.getElementById('copy-share-btn').addEventListener('click', handleCopyShareText);
-                // === 新增: Event Listener for Business Card Button ===
                 document.getElementById('generate-business-card-btn').addEventListener('click', handleGenerateBusinessCard);
             };
 
@@ -546,7 +593,6 @@
                         ctx.restore();
                     }
                 };
-
                 radarChartInstance = new Chart(ctx, {
                     type: 'radar',
                     data: {
@@ -598,7 +644,6 @@
                     nextBtn.disabled = !isAnswered;
                 }
             };
-
             // --- EVENT HANDLERS ---
             const handleAnswer = (questionId, value) => {
                 answers[questionId] = value;
@@ -613,7 +658,6 @@
                     saveProgress();
                 }
             };
-
             const handlePrevious = () => {
                 if (currentQuestionIndex > 0) {
                     currentQuestionIndex--;
@@ -621,14 +665,11 @@
                     saveProgress();
                 }
             };
-
             const handleStartQuiz = async () => {
                 showLoader('正在準備題目...');
                 try {
-                    // Fetch questions from our new backend function
-                    const response = await fetch('/api/quiz?action=getQuestions'); // Updated URL
+                    const response = await fetch('/api/quiz?action=getQuestions');
                     if (!response.ok) throw new Error('無法從伺服器獲取題目');
-                    
                     questions = await response.json();
                     
                     if (questions && questions.length > 0) {
@@ -644,19 +685,16 @@
                     hideLoader();
                 }
             };
-
             const handleSubmit = async () => {
                 showLoader('正在為您分析報告...');
                 clearProgress();
 
                 try {
-                    // Send answers to backend for calculation
-                    const response = await fetch('/api/quiz?action=calculateResult', { // Updated URL
+                    const response = await fetch('/api/quiz?action=calculateResult', { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ answers })
                     });
-
                     if (!response.ok) throw new Error('伺服器計算結果失敗');
 
                     resultReport = await response.json();
@@ -664,8 +702,6 @@
                     
                     switchPage('result-page');
                     renderResult();
-                    
-                    // Optional: Save to Firebase
                     if (user && db) {
                         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         const userId = user.uid || crypto.randomUUID();
@@ -684,7 +720,6 @@
                     hideLoader();
                 }
             };
-            
             const handleGeneratePoster = async () => {
                 const posterTemplate = document.getElementById('share-poster-template');
                 const report = resultReport;
@@ -712,7 +747,6 @@
                     setTimeout(() => { copyBtn.innerHTML = originalText; lucide.createIcons(); }, 2500);
                 } catch (err) { console.error('無法複製文字: ', err); } finally { document.body.removeChild(textArea); }
             };
-
             const handleGeminiAnalysis = async () => {
                 isGeminiLoading = true;
                 geminiAnalysis = '';
@@ -720,15 +754,14 @@
                 lucide.createIcons();
 
                 const report = resultReport;
-                const prompt = `你是一位資深的房仲職涯教練，語氣專業、誠懇且充滿鼓勵。一位新人剛剛完成了16型人格測驗，這是他的結果報告：\n- MBTI 類型: ${report.mbtiType}\n- 房仲人格標籤: ${report.type_name}\n- 優勢與潛力: ${report.strengthsText}\n- 潛在弱點與挑戰: ${report.weaknesses}\n- 建議的開發策略: ${report.client_strategy}\n- 建議的銷售策略: ${report.negotiation_strategy}\n- 建議的團隊協作方式: ${report.teamwork_suggestion}\n### 房仲超能力雷達圖分數 (滿分10分)\n- 開發力: ${report.superpowerScores['開發力']}\n- 談判力: ${report.superpowerScores['談判力']}\n- 服務力: ${report.superpowerScores['服務力']}\n- 分析力: ${report.superpowerScores['分析力']}\n- 抗壓力: ${report.superpowerScores['抗壓力']}\n\n基於以上所有報告，請為這位新人撰寫一份詳細、充滿鼓勵且具體的5年職涯發展計畫。請用繁體中文回答，並包含以下幾個部分，用 markdown 格式化，標題請用 '###'：\n1.  **### 總體職涯定位與心態建議**: 根據他的性格，給予一個整體的職涯定位和成功心法。\n2.  **### 短期目標 (第1年)**: 列出3個具體的、可執行的目標，幫助他快速上手並建立信心。\n3.  **### 中期目標 (第2-3年)**: 提出2-3個進階目標，幫助他深化專業並建立個人品牌。\n4.  **### 長期目標 (第4-5年)**: 描繪一個長遠的發展藍圖，例如成為頂尖業務、團隊領導或特定領域的專家。\n5.  **### ✨ 你的專屬創意行銷點子 ✨**: 提供一個最符合他性格特質、與眾不同的創意行銷點子。\n6.  **### 🚀 房仲超能力分析與提升建議**: 根據雷達圖分數，首先讚揚分數最高的1-2項能力，並說明這對他的職涯有何幫助。接著，找出分數最低的2項能力，用鼓勵的語氣，為這兩項能力各提供一個具體的、可立即執行的練習方法或學習建議，幫助他補強弱項。`;
+                const prompt = `你是一位資深的房仲職涯教練，語氣專業、誠懇且充滿鼓勵。一位新人剛剛完成了16型人格測驗，這是他的結果報告：\n- MBTI 類型: ${report.mbtiType}\n- 房仲人格標籤: ${report.type_name}\n- 優勢與潛力: ${report.strengthsText}\n- 潛在弱點與挑戰: ${report.weaknesses}\n- 建議的開發策略: ${report.client_strategy}\n- 建議的銷售策略: ${report.negotiation_strategy}\n- 建議的團隊協作方式: ${report.teamwork_suggestion}\n### 房仲超能力雷達圖分數 (滿分10分)\n- 開發力: ${report.superpowerScores['開發力']}\n- 談判力: ${report.superpowerScores['談判力']}\n- 服務力: ${report.superpowerScores['服務力']}\n- 分析力: ${report.superpowerScores['分析力']}\n- 抗壓力: ${report.superpowerScores['抗壓力']}\n\n基於以上所有報告，請為這位新人撰寫一份詳細、充滿鼓勵且具體的5年職涯發展計畫。請用繁體中文回答，並包含以下幾個部分，用 markdown 格式化，標題請用 '###'：\n1. **### 總體職涯定位與心態建議**: 根據他的性格，給予一個整體的職涯定位和成功心法。\n2.  **### 短期目標 (第1年)**: 列出3個具體的、可執行的目標，幫助他快速上手並建立信心。\n3.  **### 中期目標 (第2-3年)**: 提出2-3個進階目標，幫助他深化專業並建立個人品牌。\n4.  **### 長期目標 (第4-5年)**: 描繪一個長遠的發展藍圖，例如成為頂尖業務、團隊領導或特定領域的專家。\n5.  **### ✨ 你的專屬創意行銷點子 ✨**: 提供一個最符合他性格特質、與眾不同的創意行銷點子。\n6. **### 🚀 房仲超能力分析與提升建議**: 根據雷達圖分數，首先讚揚分數最高的1-2項能力，並說明這對他的職涯有何幫助。接著，找出分數最低的2項能力，用鼓勵的語氣，為這兩項能力各提供一個具體的、可立即執行的練習方法或學習建議，幫助他補強弱項。`;
                  
                 try {
-                    const response = await fetch('/api/gemini', { // Updated URL
+                    const response = await fetch('/api/gemini', { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ prompt: prompt })
                     });
-
                     if (!response.ok) {
                          const errorResult = await response.json();
                          throw new Error(errorResult.error.message || 'API request failed');
@@ -745,7 +778,6 @@
                     lucide.createIcons();
                 }
             };
-
             const handleRetake = () => {
                 currentPage = 'intro';
                 answers = {};
@@ -753,7 +785,7 @@
                 geminiAnalysis = '';
                 isGeminiLoading = false;
                 resultReport = {};
-                questions = []; // Clear questions
+                questions = []; 
                 submitBtn.textContent = '完成測驗';
                 submitBtn.disabled = false;
                 clearProgress();
@@ -761,10 +793,26 @@
                 switchPage('intro-page');
             };
 
-            // === 新增: Business Card Functions ===
+            // === MODIFICATION START: Updated Business Card Functions ===
             const handleGenerateBusinessCard = () => {
                 document.getElementById('form-mbti-type').value = `${resultReport.type_name} (${resultReport.mbtiType})`;
+                // Reset form and previews
+                businessCardForm.reset();
+                photoPreview.src = 'https://via.placeholder.com/100';
+                qrcodePreview.src = 'https://via.placeholder.com/100';
+                agentPhotoText.textContent = '選擇檔案';
+                agentQrcodeText.textContent = '選擇檔案';
                 businessCardModal.style.display = 'flex';
+            };
+
+            // Helper to read file as Data URL
+            const readFileAsDataURL = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = (error) => reject(error);
+                    reader.readAsDataURL(file);
+                });
             };
 
             const handleBusinessCardFormSubmit = async (event) => {
@@ -773,71 +821,115 @@
 
                 const formData = new FormData(event.target);
                 const agentName = formData.get('agent-name');
+                const agentTitle = formData.get('agent-title');
                 const agentPhone = formData.get('agent-phone');
                 const agentLineId = formData.get('agent-lineid');
                 const agentCompany = formData.get('agent-company');
+                const photoFile = agentPhotoInput.files[0];
+                const qrCodeFile = agentQrcodeInput.files[0];
                 
-                const report = resultReport;
-                const cardTemplate = document.getElementById('business-card-template');
+                if (!photoFile || !qrCodeFile) {
+                    alert('請確認已上傳個人形象照和 QR Code。');
+                    hideLoader();
+                    return;
+                }
 
-                // A simple but elegant business card template
-                cardTemplate.innerHTML = `
-                    <div class="w-full h-full bg-white p-8 flex flex-col justify-between relative overflow-hidden border-4 border-indigo-600">
-                        <div class="absolute top-0 left-0 w-full h-24 bg-indigo-600"></div>
-                        <div class="z-10 text-center mt-8">
-                            <p class="text-indigo-800 font-semibold">${agentCompany}</p>
-                            <h2 class="text-4xl font-extrabold text-gray-800 mt-1">${agentName}</h2>
-                            <p class="text-lg text-gray-500 mt-2">您的專屬房產顧問</p>
-                        </div>
-                        
-                        <div class="text-center p-6 bg-indigo-50 rounded-xl my-6">
-                            <p class="text-lg font-semibold text-indigo-700">我是【${report.type_name.split(' - ')[0]}】</p>
-                            <p class="text-gray-600 mt-2 leading-relaxed text-base">${report.client_perspective_text}</p>
-                        </div>
-
-                        <div class="z-10 text-left space-y-3 text-lg">
-                            <div class="flex items-center"><i data-lucide="phone" class="w-5 h-5 mr-3 text-indigo-600"></i><span class="text-gray-700">${agentPhone}</span></div>
-                            <div class="flex items-center"><i data-lucide="message-square" class="w-5 h-5 mr-3 text-indigo-600"></i><span class="text-gray-700">LINE ID: ${agentLineId}</span></div>
-                        </div>
-                        
-                        <div class="text-center text-xs text-gray-400 mt-4">
-                            <p>掃描QR-Code或透過上方資訊與我聯繫</p>
-                            <p class="mt-1">由「房仲16型人格測驗」生成</p>
-                        </div>
-                    </div>
-                `;
-                lucide.createIcons();
-                
-                // Submit form data to Netlify
                 try {
+                    // Read both images concurrently
+                    const [photoDataUrl, qrCodeDataUrl] = await Promise.all([
+                        readFileAsDataURL(photoFile),
+                        readFileAsDataURL(qrCodeFile)
+                    ]);
+
+                    const report = resultReport;
+                    const cardTemplate = document.getElementById('business-card-template');
+
+                    // Split client perspective text
+                    let mainText = report.client_perspective_text;
+                    let lastSentence = '';
+                    if (mainText.includes('適合')) {
+                        const splitIndex = mainText.lastIndexOf('適合');
+                        lastSentence = mainText.substring(splitIndex);
+                        mainText = mainText.substring(0, splitIndex).trim();
+                    }
+
+                    // New Luxury Poster Template
+                    cardTemplate.innerHTML = `
+                        <div class="w-full h-full bg-gray-900 text-white p-6 flex flex-col justify-between relative font-sans overflow-hidden" style="background: linear-gradient(135deg, #262626 0%, #171717 100%);">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-300 to-yellow-500"></div>
+                            <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-500 to-yellow-300"></div>
+                            <div class="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-r from-gray-700/20 to-transparent rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+                            
+                            <div class="relative z-10 flex flex-col items-center text-center mt-4">
+                                <div class="w-32 h-32 rounded-full border-4 border-gray-600 shadow-lg mb-4 bg-center bg-cover" style="background-image: url('${photoDataUrl}')"></div>
+                                <h2 class="text-4xl font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-white">${agentName}</h2>
+                                <p class="text-yellow-400 font-semibold text-lg mt-1">${agentTitle}</p>
+                                <p class="text-gray-400 text-sm mt-2">${agentCompany}</p>
+                            </div>
+
+                            <div class="relative z-10 text-center p-4 bg-black/30 rounded-lg border border-gray-700 my-4">
+                                <p class="text-lg font-semibold text-yellow-300 mb-2">我是您的房仲【${report.type_name.split(' - ')[0]}】</p>
+                                <p class="text-gray-300 leading-relaxed">${mainText}</p>
+                                ${lastSentence ? `<p class="text-gray-300 mt-3 text-center">${lastSentence}</p>` : ''}
+                            </div>
+
+                            <div class="relative z-10 flex items-end justify-between">
+                                <div class="text-left space-y-2 text-gray-300 text-sm">
+                                    <div class="flex items-center"><i data-lucide="phone" class="w-4 h-4 mr-2 text-yellow-400"></i><span>${agentPhone}</span></div>
+                                    <div class="flex items-center"><i data-lucide="message-square" class="w-4 h-4 mr-2 text-yellow-400"></i><span>LINE ID: ${agentLineId}</span></div>
+                                </div>
+                                <div class="text-center">
+                                     <img src="${qrCodeDataUrl}" alt="QR Code" class="w-24 h-24 object-contain bg-white p-1 rounded-md shadow-lg">
+                                     <p class="text-xs text-gray-500 mt-1">掃描與我聯繫</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    
+                    // Submit form data to Netlify (without files)
                     await fetch("/", {
                         method: "POST",
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
                         body: new URLSearchParams(formData).toString(),
                     });
-                } catch (error) {
-                    console.error("Form submission to Netlify failed:", error);
-                    // Don't block poster generation even if form submission fails
-                }
-                
-                // Generate poster image
-                setTimeout(async () => {
-                    try {
-                        const canvas = await html2canvas(cardTemplate, { useCORS: true, scale: 2 });
+
+                    // Generate poster image after a short delay for rendering
+                    setTimeout(async () => {
+                        const canvas = await html2canvas(cardTemplate, { useCORS: true, scale: 2, backgroundColor: null });
                         const imageUrl = canvas.toDataURL('image/png');
                         posterImageContainerBusiness.innerHTML = `<img src="${imageUrl}" alt="客戶名片海報" class="w-full h-auto">`;
                         downloadPosterBtnBusiness.href = imageUrl;
-                        businessCardModal.style.display = 'none'; // Hide form modal
-                        posterModalBusiness.style.display = 'flex'; // Show poster modal
-                    } catch (error) {
-                        console.error('名片海報生成失敗:', error);
-                        alert('抱歉，名片海報生成失敗，請稍後再試。');
-                    } finally {
+                        businessCardModal.style.display = 'none';
+                        posterModalBusiness.style.display = 'flex';
                         hideLoader();
-                    }
-                }, 500);
+                    }, 500);
+
+                } catch (error) {
+                    console.error('名片海報生成失敗:', error);
+                    alert('抱歉，名片海報生成失敗，請稍後再試。');
+                    hideLoader();
+                }
             };
 
+            // Event handler for file input to show preview
+            const setupFileInputPreview = (inputEl, previewEl, textEl) => {
+                inputEl.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            previewEl.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                        textEl.textContent = file.name.length > 15 ? file.name.substring(0, 12) + '...' : file.name;
+                    } else {
+                        previewEl.src = 'https://via.placeholder.com/100';
+                        textEl.textContent = '選擇檔案';
+                    }
+                });
+            };
+            // === MODIFICATION END ===
 
             // --- INITIALIZATION ---
             
@@ -871,10 +963,13 @@
             startNewBtn.addEventListener('click', () => { resumeModal.style.display = 'none'; clearProgress(); answers = {}; currentQuestionIndex = 0; });
             closePosterModalBtn.addEventListener('click', () => { posterModal.style.display = 'none'; });
 
-            // === 新增: Business Card Event Listeners ===
+            // === MODIFICATION START: Business Card Event Listeners ===
             businessCardForm.addEventListener('submit', handleBusinessCardFormSubmit);
             closeBusinessCardModalBtn.addEventListener('click', () => { businessCardModal.style.display = 'none'; });
             closePosterModalBusinessBtn.addEventListener('click', () => { posterModalBusiness.style.display = 'none'; });
+            setupFileInputPreview(agentPhotoInput, photoPreview, agentPhotoText);
+            setupFileInputPreview(agentQrcodeInput, qrcodePreview, agentQrcodeText);
+            // === MODIFICATION END ===
             
             lucide.createIcons();
             setupFirebase();
