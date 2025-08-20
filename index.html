@@ -99,7 +99,7 @@
         </div>
     </div>
 
-    <div id="business-card-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 overflow-y-auto" style="display: none;">
+   <div id="business-card-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 overflow-y-auto" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all my-8" style="animation: fadeIn 0.3s ease-out;">
             <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">製作您的客戶名片海報</h2>
             <form id="business-card-form" name="business-card-leads" method="POST" data-netlify="true" enctype="multipart/form-data">
@@ -109,6 +109,10 @@
                     <div>
                         <label for="agent-name" class="block text-sm font-medium text-gray-700 mb-1">您的姓名</label>
                         <input type="text" id="agent-name" name="agent-name" class="form-input" placeholder="例如: 王小明" required>
+                    </div>
+                    <div>
+                        <label for="agent-title" class="block text-sm font-medium text-gray-700 mb-1">您的職稱</label>
+                        <input type="text" id="agent-title" name="agent-title" class="form-input" placeholder="例如: 營業員 / 副理" required>
                     </div>
                     <div>
                         <label for="agent-phone" class="block text-sm font-medium text-gray-700 mb-1">聯絡電話</label>
@@ -123,16 +127,12 @@
                         <input type="text" id="agent-company" name="agent-company" class="form-input" placeholder="例如: XX房屋 中壢A7店" required>
                     </div>
                     <div>
-                        <label for="agent-photo" class="block text-sm font-medium text-gray-700 mb-1">上傳個人形象照</label>
+                        <label for="agent-photo" class="block text-sm font-medium text-gray-700 mb-1">上傳個人形象照 (建議使用透明背景)</label>
                         <input type="file" id="agent-photo" name="agent-photo" class="form-input" accept="image/*" required>
                     </div>
                     <div>
                         <label for="agent-qrcode" class="block text-sm font-medium text-gray-700 mb-1">上傳個人 QR Code (Line, IG...)</label>
                         <input type="file" id="agent-qrcode" name="agent-qrcode" class="form-input" accept="image/*" required>
-                    </div>
-                     <div>
-                        <label for="agent-color" class="block text-sm font-medium text-gray-700 mb-1">選擇您的主題顏色</label>
-                        <input type="color" id="agent-color" name="agent-color" class="form-input h-12 p-1" value="#4f46e5">
                     </div>
                 </div>
                 <div class="mt-8 flex gap-4">
@@ -142,7 +142,6 @@
             </form>
         </div>
     </div>
-    
     <div id="poster-modal-business" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center transform transition-all relative" style="animation: fadeIn 0.3s ease-out;">
             <button id="close-poster-modal-business" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
@@ -921,5 +920,6 @@
     </script>
 </body>
 </html>
+
 
 
