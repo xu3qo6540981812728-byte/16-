@@ -5,19 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>房仲新人16型人格測驗</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Chart.js for Radar Chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- html2canvas for Poster Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    <!-- Firebase SDKs (Optional, if you still want to save user data) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -43,7 +38,7 @@
         .strength-chart .bar { height: 100%; transition: width 0.5s ease-in-out; display: flex; align-items: center; justify-content: center; }
         .label-left { text-align: right; width: 4rem; margin-right: 0.75rem; font-weight: bold; }
         .label-right { text-align: left; width: 4rem; margin-left: 0.75rem; font-weight: bold; }
-        #share-poster-template { width: 375px; height: 667px; position: absolute; left: -9999px; top: -9999px; font-family: 'Helvetica Neue', sans-serif; }
+        #share-poster-template, #business-card-template { width: 375px; height: 667px; position: absolute; left: -9999px; top: -9999px; font-family: 'Helvetica Neue', sans-serif; }
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #4f46e5;
@@ -56,11 +51,22 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+        }
     </style>
 </head>
 <body class="bg-gray-50">
     
-    <!-- Loading Modal -->
     <div id="loading-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center">
             <div class="loader mx-auto"></div>
@@ -68,7 +74,6 @@
         </div>
     </div>
 
-    <!-- Resume Modal -->
     <div id="resume-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center transform transition-all" style="animation: fadeIn 0.3s ease-out;">
             <h2 class="text-2xl font-bold mb-4 text-gray-800">發現未完成的測驗</h2>
@@ -80,7 +85,6 @@
         </div>
     </div>
 
-    <!-- Share Poster Modal -->
     <div id="poster-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center transform transition-all relative" style="animation: fadeIn 0.3s ease-out;">
             <button id="close-poster-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
@@ -95,8 +99,54 @@
         </div>
     </div>
 
+    <div id="business-card-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all" style="animation: fadeIn 0.3s ease-out;">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">製作您的客戶名片海報</h2>
+            <form id="business-card-form" name="business-card-leads" method="POST" data-netlify="true">
+                <input type="hidden" name="form-name" value="business-card-leads" />
+                <input type="hidden" id="form-mbti-type" name="mbti-type" value="" />
+                <div class="space-y-4">
+                    <div>
+                        <label for="agent-name" class="block text-sm font-medium text-gray-700 mb-1">您的姓名</label>
+                        <input type="text" id="agent-name" name="agent-name" class="form-input" placeholder="例如: 王小明" required>
+                    </div>
+                    <div>
+                        <label for="agent-phone" class="block text-sm font-medium text-gray-700 mb-1">聯絡電話</label>
+                        <input type="tel" id="agent-phone" name="agent-phone" class="form-input" placeholder="例如: 0912-345-678" required>
+                    </div>
+                    <div>
+                        <label for="agent-lineid" class="block text-sm font-medium text-gray-700 mb-1">LINE ID</label>
+                        <input type="text" id="agent-lineid" name="agent-lineid" class="form-input" placeholder="例如: mylineid" required>
+                    </div>
+                    <div>
+                        <label for="agent-company" class="block text-sm font-medium text-gray-700 mb-1">房仲品牌/公司</label>
+                        <input type="text" id="agent-company" name="agent-company" class="form-input" placeholder="例如: XX房屋 中壢A7店" required>
+                    </div>
+                </div>
+                <div class="mt-8 flex gap-4">
+                    <button id="close-business-card-modal" type="button" class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition-all">取消</button>
+                    <button type="submit" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all">生成海報並提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="poster-modal-business" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center transform transition-all relative" style="animation: fadeIn 0.3s ease-out;">
+            <button id="close-poster-modal-business" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">您的客戶專屬名片海報</h2>
+            <div id="poster-image-container-business" class="mb-4 border-2 border-gray-200 rounded-lg overflow-hidden"></div>
+            <p class="text-gray-600 mb-4">長按圖片即可儲存或分享給客戶！</p>
+            <a id="download-poster-btn-business" href="#" download="real-estate-business-card.png" class="inline-block w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200">
+                下載海報
+            </a>
+        </div>
+    </div>
+
+
     <div id="app-container">
-        <!-- Introduction Page -->
         <div id="intro-page" class="page active flex-col items-center justify-between min-h-screen p-4 text-center">
             <div class="flex-grow flex items-center justify-center w-full">
                 <div class="p-8 bg-white rounded-xl shadow-2xl max-w-2xl w-full">
@@ -125,7 +175,6 @@
             </footer>
         </div>
 
-        <!-- Quiz Page -->
         <div id="quiz-page" class="page flex-col items-center justify-between min-h-screen p-4">
             <div class="flex-grow flex items-center justify-center w-full">
                 <div class="p-8 bg-white rounded-xl shadow-2xl w-full max-w-xl flex flex-col items-center">
@@ -157,7 +206,6 @@
             </footer>
         </div>
 
-        <!-- Result Page -->
         <div id="result-page" class="page flex-col items-center justify-between min-h-screen p-4">
             <div class="flex-grow flex items-center justify-center w-full my-8">
                 <div class="flex flex-col items-center">
@@ -182,8 +230,8 @@
         </div>
     </div>
 
-    <!-- Hidden Poster Template for html2canvas -->
     <div id="share-poster-template"></div>
+    <div id="business-card-template"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -220,6 +268,15 @@
             const downloadPosterBtn = document.getElementById('download-poster-btn');
             const loadingModal = document.getElementById('loading-modal');
             const loadingText = document.getElementById('loading-text');
+
+            // === 新增: Business Card Modal Elements ===
+            const businessCardModal = document.getElementById('business-card-modal');
+            const closeBusinessCardModalBtn = document.getElementById('close-business-card-modal');
+            const businessCardForm = document.getElementById('business-card-form');
+            const posterModalBusiness = document.getElementById('poster-modal-business');
+            const closePosterModalBusinessBtn = document.getElementById('close-poster-modal-business');
+            const posterImageContainerBusiness = document.getElementById('poster-image-container-business');
+            const downloadPosterBtnBusiness = document.getElementById('download-poster-btn-business');
 
             // --- FUNCTIONS ---
             
@@ -350,7 +407,7 @@
                     return;
                 }
                 
-                const strengths = report.strengths || {};
+                const percentages = report.strengths || {}; // Note: backend now sends 'strengths' object with percentages
                 const strengthLabels = {
                     E: { label: '外向', color: 'bg-blue-500' }, I: { label: '內向', color: 'bg-blue-400' },
                     S: { label: '實感', color: 'bg-green-500' }, N: { label: '直覺', color: 'bg-green-400' },
@@ -361,8 +418,8 @@
                 let strengthChartHtml = '';
                 for (const pair of ['EI', 'SN', 'TF', 'JP']) {
                     const [trait1, trait2] = pair.split('');
-                    const percent1 = strengths[pair]?.[trait1] || 50;
-                    const percent2 = strengths[pair]?.[trait2] || 50;
+                    const percent1 = percentages[pair]?.[trait1] || 50;
+                    const percent2 = percentages[pair]?.[trait2] || 50;
                     
                     strengthChartHtml += `
                         <div class="bar-wrapper">
@@ -404,7 +461,7 @@
                             </div>
                             <div class="grid md:grid-cols-2 gap-6">
                                 <div class="p-6 bg-gray-50 rounded-lg shadow-inner">
-                                    <h3 class="text-2xl font-semibold flex items-center text-green-700 mb-2"><i data-lucide="smile" class="w-6 h-6 mr-2"></i> 優勢與潛力</h3>
+                                    <h3 class="text-2xl font-semibold flex items-center text-green-700 mb-2"><i data-lucide="smile" class="w-6 h-6 mr-2"></i> 優勢與潛力 (個人化分析)</h3>
                                     <p class="text-gray-700 leading-relaxed">${report.strengthsText}</p>
                                 </div>
                                 <div class="p-6 bg-gray-50 rounded-lg shadow-inner">
@@ -431,25 +488,25 @@
                             <div id="gemini-section" class="mt-8 pt-6 border-t-2 border-dashed border-indigo-200">${renderGeminiSection()}</div>
                         </div>
                         
-                        <!-- === MODIFIED SECTION: Share & Recruit === -->
                         <div class="mt-8 pt-6 border-t-2 border-indigo-200 text-center">
-                            <h3 class="text-2xl font-semibold text-gray-800 mb-4">分享你的房仲超能力！</h3>
-                            <p class="text-gray-500 mb-6">讓朋友和同事也來測測看，誰是你的神隊友！</p>
-                            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                            <h3 class="text-2xl font-semibold text-gray-800 mb-4">分享成果 & 拓展事業</h3>
+                            <p class="text-gray-500 mb-6">將你的超能力分享出去，或製作專屬海報吸引客戶！</p>
+                            <div class="flex flex-col sm:flex-row justify-center items-center gap-4 flex-wrap">
                                 <button id="generate-poster-btn" type="button" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-rose-500 text-white font-semibold rounded-full shadow-md hover:bg-rose-600 transition-all duration-300 transform hover:scale-105">
-                                    <i data-lucide="image" class="w-5 h-5 mr-2"></i> 生成分享海報
+                                    <i data-lucide="image" class="w-5 h-5 mr-2"></i> 生成個人海報
+                                </button>
+                                <button id="generate-business-card-btn" type="button" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-teal-500 text-white font-semibold rounded-full shadow-md hover:bg-teal-600 transition-all duration-300 transform hover:scale-105">
+                                    <i data-lucide="contact" class="w-5 h-5 mr-2"></i> 製作客戶名片海報
                                 </button>
                                 <button id="copy-share-btn" type="button" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-gray-600 text-white font-semibold rounded-full shadow-md hover:bg-gray-700 transition-all duration-300 transform hover:scale-105">
                                     <i data-lucide="copy" class="w-5 h-5 mr-2"></i> 複製分享文案
                                 </button>
-                                <!-- === NEW BUTTON ADDED HERE === -->
                                 <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-green-500 text-white font-semibold rounded-full shadow-md hover:bg-green-600 transition-all duration-300 transform hover:scale-105">
                                     <i data-lucide="rocket" class="w-5 h-5 mr-2"></i> 招募未來菁英
                                 </a>
                             </div>
                         </div>
-                        <!-- === END OF MODIFIED SECTION === -->
-                    </div>
+                        </div>
                 `;
                 resultContentEl.innerHTML = html;
                 lucide.createIcons();
@@ -459,6 +516,8 @@
                 document.getElementById('gemini-analysis-btn')?.addEventListener('click', handleGeminiAnalysis);
                 document.getElementById('generate-poster-btn').addEventListener('click', handleGeneratePoster);
                 document.getElementById('copy-share-btn').addEventListener('click', handleCopyShareText);
+                // === 新增: Event Listener for Business Card Button ===
+                document.getElementById('generate-business-card-btn').addEventListener('click', handleGenerateBusinessCard);
             };
 
             const renderRadarChart = (scores) => {
@@ -567,7 +626,7 @@
                 showLoader('正在準備題目...');
                 try {
                     // Fetch questions from our new backend function
-                    const response = await fetch('/.netlify/functions/quiz?action=getQuestions');
+                    const response = await fetch('/api/quiz?action=getQuestions'); // Updated URL
                     if (!response.ok) throw new Error('無法從伺服器獲取題目');
                     
                     questions = await response.json();
@@ -592,7 +651,7 @@
 
                 try {
                     // Send answers to backend for calculation
-                    const response = await fetch('/.netlify/functions/quiz?action=calculateResult', {
+                    const response = await fetch('/api/quiz?action=calculateResult', { // Updated URL
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ answers })
@@ -627,7 +686,6 @@
             };
             
             const handleGeneratePoster = async () => {
-                // ... (This function remains the same as your original)
                 const posterTemplate = document.getElementById('share-poster-template');
                 const report = resultReport;
                 posterTemplate.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-indigo-600 to-purple-700 p-8 flex flex-col text-white relative overflow-hidden"><div class="absolute -top-10 -right-10 w-48 h-48 bg-white/10 rounded-full"></div><div class="absolute bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full"></div><div class="text-center z-10"><p class="text-lg font-light">我的房仲人格是</p><h2 class="text-4xl font-extrabold my-2">${report.mbtiType}</h2><h3 class="text-2xl font-bold bg-white/20 px-4 py-1 rounded-full inline-block">${report.type_name.split(' - ')[0]}</h3><p class="text-xl font-semibold mt-4 italic">"${report.catch_phrase}"</p></div><div class="flex-grow my-4 z-10"><canvas id="poster-radar-chart"></canvas></div><div class="text-center z-10"><p class="text-sm">測測你的房仲超能力！</p><p class="text-xs mt-2">by 桃園房仲專業顧問培智</p></div></div>`;
@@ -638,7 +696,6 @@
             };
 
             const handleCopyShareText = () => {
-                // ... (This function remains the same as your original)
                 const report = resultReport;
                 const shareText = `我在「房仲16型人格測驗」中測出的結果是【${report.type_name}】！${report.partner_info.text}！你也來測測看，發掘你在房仲業的超能力吧！ ${window.location.href}`;
                 const textArea = document.createElement("textarea");
@@ -666,7 +723,7 @@
                 const prompt = `你是一位資深的房仲職涯教練，語氣專業、誠懇且充滿鼓勵。一位新人剛剛完成了16型人格測驗，這是他的結果報告：\n- MBTI 類型: ${report.mbtiType}\n- 房仲人格標籤: ${report.type_name}\n- 優勢與潛力: ${report.strengthsText}\n- 潛在弱點與挑戰: ${report.weaknesses}\n- 建議的開發策略: ${report.client_strategy}\n- 建議的銷售策略: ${report.negotiation_strategy}\n- 建議的團隊協作方式: ${report.teamwork_suggestion}\n### 房仲超能力雷達圖分數 (滿分10分)\n- 開發力: ${report.superpowerScores['開發力']}\n- 談判力: ${report.superpowerScores['談判力']}\n- 服務力: ${report.superpowerScores['服務力']}\n- 分析力: ${report.superpowerScores['分析力']}\n- 抗壓力: ${report.superpowerScores['抗壓力']}\n\n基於以上所有報告，請為這位新人撰寫一份詳細、充滿鼓勵且具體的5年職涯發展計畫。請用繁體中文回答，並包含以下幾個部分，用 markdown 格式化，標題請用 '###'：\n1.  **### 總體職涯定位與心態建議**: 根據他的性格，給予一個整體的職涯定位和成功心法。\n2.  **### 短期目標 (第1年)**: 列出3個具體的、可執行的目標，幫助他快速上手並建立信心。\n3.  **### 中期目標 (第2-3年)**: 提出2-3個進階目標，幫助他深化專業並建立個人品牌。\n4.  **### 長期目標 (第4-5年)**: 描繪一個長遠的發展藍圖，例如成為頂尖業務、團隊領導或特定領域的專家。\n5.  **### ✨ 你的專屬創意行銷點子 ✨**: 提供一個最符合他性格特質、與眾不同的創意行銷點子。\n6.  **### 🚀 房仲超能力分析與提升建議**: 根據雷達圖分數，首先讚揚分數最高的1-2項能力，並說明這對他的職涯有何幫助。接著，找出分數最低的2項能力，用鼓勵的語氣，為這兩項能力各提供一個具體的、可立即執行的練習方法或學習建議，幫助他補強弱項。`;
                  
                 try {
-                    const response = await fetch('/.netlify/functions/gemini', {
+                    const response = await fetch('/api/gemini', { // Updated URL
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ prompt: prompt })
@@ -704,6 +761,84 @@
                 switchPage('intro-page');
             };
 
+            // === 新增: Business Card Functions ===
+            const handleGenerateBusinessCard = () => {
+                document.getElementById('form-mbti-type').value = `${resultReport.type_name} (${resultReport.mbtiType})`;
+                businessCardModal.style.display = 'flex';
+            };
+
+            const handleBusinessCardFormSubmit = async (event) => {
+                event.preventDefault();
+                showLoader('正在生成您的專屬名片海報...');
+
+                const formData = new FormData(event.target);
+                const agentName = formData.get('agent-name');
+                const agentPhone = formData.get('agent-phone');
+                const agentLineId = formData.get('agent-lineid');
+                const agentCompany = formData.get('agent-company');
+                
+                const report = resultReport;
+                const cardTemplate = document.getElementById('business-card-template');
+
+                // A simple but elegant business card template
+                cardTemplate.innerHTML = `
+                    <div class="w-full h-full bg-white p-8 flex flex-col justify-between relative overflow-hidden border-4 border-indigo-600">
+                        <div class="absolute top-0 left-0 w-full h-24 bg-indigo-600"></div>
+                        <div class="z-10 text-center mt-8">
+                            <p class="text-indigo-800 font-semibold">${agentCompany}</p>
+                            <h2 class="text-4xl font-extrabold text-gray-800 mt-1">${agentName}</h2>
+                            <p class="text-lg text-gray-500 mt-2">您的專屬房產顧問</p>
+                        </div>
+                        
+                        <div class="text-center p-6 bg-indigo-50 rounded-xl my-6">
+                            <p class="text-lg font-semibold text-indigo-700">我是【${report.type_name.split(' - ')[0]}】</p>
+                            <p class="text-gray-600 mt-2 leading-relaxed text-base">${report.client_perspective_text}</p>
+                        </div>
+
+                        <div class="z-10 text-left space-y-3 text-lg">
+                            <div class="flex items-center"><i data-lucide="phone" class="w-5 h-5 mr-3 text-indigo-600"></i><span class="text-gray-700">${agentPhone}</span></div>
+                            <div class="flex items-center"><i data-lucide="message-square" class="w-5 h-5 mr-3 text-indigo-600"></i><span class="text-gray-700">LINE ID: ${agentLineId}</span></div>
+                        </div>
+                        
+                        <div class="text-center text-xs text-gray-400 mt-4">
+                            <p>掃描QR-Code或透過上方資訊與我聯繫</p>
+                            <p class="mt-1">由「房仲16型人格測驗」生成</p>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+                
+                // Submit form data to Netlify
+                try {
+                    await fetch("/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: new URLSearchParams(formData).toString(),
+                    });
+                } catch (error) {
+                    console.error("Form submission to Netlify failed:", error);
+                    // Don't block poster generation even if form submission fails
+                }
+                
+                // Generate poster image
+                setTimeout(async () => {
+                    try {
+                        const canvas = await html2canvas(cardTemplate, { useCORS: true, scale: 2 });
+                        const imageUrl = canvas.toDataURL('image/png');
+                        posterImageContainerBusiness.innerHTML = `<img src="${imageUrl}" alt="客戶名片海報" class="w-full h-auto">`;
+                        downloadPosterBtnBusiness.href = imageUrl;
+                        businessCardModal.style.display = 'none'; // Hide form modal
+                        posterModalBusiness.style.display = 'flex'; // Show poster modal
+                    } catch (error) {
+                        console.error('名片海報生成失敗:', error);
+                        alert('抱歉，名片海報生成失敗，請稍後再試。');
+                    } finally {
+                        hideLoader();
+                    }
+                }, 500);
+            };
+
+
             // --- INITIALIZATION ---
             
             const setupFirebase = async () => {
@@ -735,6 +870,11 @@
             resumeBtn.addEventListener('click', () => { resumeModal.style.display = 'none'; handleStartQuiz().then(loadProgress); });
             startNewBtn.addEventListener('click', () => { resumeModal.style.display = 'none'; clearProgress(); answers = {}; currentQuestionIndex = 0; });
             closePosterModalBtn.addEventListener('click', () => { posterModal.style.display = 'none'; });
+
+            // === 新增: Business Card Event Listeners ===
+            businessCardForm.addEventListener('submit', handleBusinessCardFormSubmit);
+            closeBusinessCardModalBtn.addEventListener('click', () => { businessCardModal.style.display = 'none'; });
+            closePosterModalBusinessBtn.addEventListener('click', () => { posterModalBusiness.style.display = 'none'; });
             
             lucide.createIcons();
             setupFirebase();
