@@ -861,9 +861,6 @@
             const handleBusinessCardFormSubmit = async (event) => {
                 event.preventDefault();
                 
-                // 改善: 立即顯示等待提示
-                showLoader('資料上傳中，並為您生成海報...');
-
                 const form = event.target;
                 const formData = new FormData(form);
                 
@@ -873,19 +870,31 @@
                 const agentLineId = formData.get('agent-lineid');
                 const agentCompany = formData.get('agent-company');
                 
+                // === 修改點：從 form elements 取得檔案 ===
+                const photoFile = form.elements['agent-photo'].files[0];
                 const qrcodeFile = form.elements['agent-qrcode'].files[0];
 
-                if (!croppedPhotoDataUrl) {
+                // === 修改點：增強檔案驗證 ===
+                if (!croppedPhotoDataUrl || !photoFile) {
                     alert('請務必上傳並確認裁切您的個人形象照！');
-                    hideLoader();
                     return;
                 }
-                 if (!qrcodeFile) {
+                if (!qrcodeFile) {
                     alert('請務必上傳個人 QR Code！');
-                    hideLoader();
                     return;
                 }
-
+                // 檢查檔案類型是否為圖片
+                if (!photoFile.type.startsWith('image/')){
+                    alert('您上傳的個人形象照格式不正確，請選擇圖片檔案（如 .jpg, .png）。');
+                    return;
+                }
+                if (!qrcodeFile.type.startsWith('image/')){
+                    alert('您上傳的 QR Code 格式不正確，請選擇圖片檔案（如 .jpg, .png）。');
+                    return;
+                }
+                
+                // 修正：將等待提示移到所有檢查之後
+                showLoader('資料上傳中，並為您生成海報...');
 
                 try {
                     const qrcodeDataUrl = await readFileAsDataURL(qrcodeFile);
@@ -893,12 +902,9 @@
                     const report = resultReport;
                     const cardTemplate = document.getElementById('business-card-template');
 
-                    // === 全新 亮金銀黑 質感海報模板 ===
                     cardTemplate.innerHTML = `
                         <div class="w-full h-full p-5 flex flex-col justify-between relative font-sans" style="background: radial-gradient(circle, #4a4a4a 0%, #1a1a1a 100%);">
-                            
                             <div class="absolute top-0 left-0 w-full h-full opacity-5" style="background-image: url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.4%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
-
                             <div class="flex-grow flex flex-col justify-center items-center text-center -mt-4">
                                 <div class="w-40 h-40 mb-4 rounded-full overflow-hidden border-4 border-white/80" style="box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);">
                                     <img src="${croppedPhotoDataUrl}" class="w-full h-full object-cover" alt="個人形象照">
@@ -907,14 +913,12 @@
                                 <p class="text-xl text-gray-300">${agentTitle}</p>
                                 <p class="text-md text-gray-400 mt-1">${agentCompany}</p>
                             </div>
-
                             <div class="my-4 text-center px-4">
                                 <div class="w-full h-px" style="background: linear-gradient(90deg, transparent, #FFD700, transparent);"></div>
                                 <p class="text-gray-200 mt-4 leading-relaxed text-md">${report.client_perspective.main}</p>
                                 <p class="text-gray-300 mt-2 text-md text-center">${report.client_perspective.tagline}</p>
                                 <div class="w-full h-px mt-4" style="background: linear-gradient(90deg, transparent, #FFD700, transparent);"></div>
                             </div>
-                            
                             <div class="flex items-center justify-between bg-black/30 p-4 rounded-lg backdrop-blur-sm border border-white/10">
                                 <div class="space-y-2 text-sm">
                                     <div class="flex items-center"><i data-lucide="phone" class="w-4 h-4 mr-2 text-gray-300"></i><span class="text-gray-200">${agentPhone}</span></div>
@@ -924,8 +928,7 @@
                                     <img src="${qrcodeDataUrl}" class="w-full h-full object-contain" alt="QR Code">
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                     lucide.createIcons();
                     
                     await fetch("/", {
@@ -951,11 +954,11 @@
 
                 } catch (fileReadError) {
                     console.error('讀取圖片失敗:', fileReadError);
-                    alert('讀取圖片時發生錯誤，請確認檔案格式是否正確。');
+                    // 這裡的錯誤提示現在應該很少會出現了，因為前面已經檢查過格式
+                    alert('讀取圖片時發生無法預期的錯誤，請稍後再試。');
                     hideLoader();
                 }
             };
-
 
             // --- INITIALIZATION ---
             
@@ -1000,3 +1003,4 @@
     </script>
 </body>
 </html>
+
