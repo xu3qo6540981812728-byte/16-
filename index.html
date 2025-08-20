@@ -275,7 +275,6 @@
             let resultReport = {};
             let radarChartInstance = null;
             let questions = [];
-            // === 新增: Cropper State ===
             let cropper = null;
             let croppedPhotoDataUrl = null;
 
@@ -299,8 +298,6 @@
             const downloadPosterBtn = document.getElementById('download-poster-btn');
             const loadingModal = document.getElementById('loading-modal');
             const loadingText = document.getElementById('loading-text');
-
-            // === Business Card Modal Elements ===
             const businessCardModal = document.getElementById('business-card-modal');
             const closeBusinessCardModalBtn = document.getElementById('close-business-card-modal');
             const businessCardForm = document.getElementById('business-card-form');
@@ -309,37 +306,25 @@
             const posterImageContainerBusiness = document.getElementById('poster-image-container-business');
             const downloadPosterBtnBusiness = document.getElementById('download-poster-btn-business');
             const agentPhotoInput = document.getElementById('agent-photo');
-
-            // === Cropper Modal Elements ===
             const cropperModal = document.getElementById('cropper-modal');
             const cropperImage = document.getElementById('cropper-image');
             const cancelCropBtn = document.getElementById('cancel-crop-btn');
             const confirmCropBtn = document.getElementById('confirm-crop-btn');
             
-
             // --- FUNCTIONS ---
-            
             const showLoader = (text = '載入中...') => {
                 loadingText.textContent = text;
                 loadingModal.style.display = 'flex';
             };
-
             const hideLoader = () => {
                 loadingModal.style.display = 'none';
             };
-
             const saveProgress = () => {
-                const progress = {
-                    answers: answers,
-                    currentQuestionIndex: currentQuestionIndex
-                };
-                localStorage.setItem('mbtiQuizProgress', JSON.stringify(progress));
+                localStorage.setItem('mbtiQuizProgress', JSON.stringify({ answers, currentQuestionIndex }));
             };
-
             const clearProgress = () => localStorage.removeItem('mbtiQuizProgress');
             const saveResult = (report) => localStorage.setItem('mbtiQuizResult', JSON.stringify(report));
             const clearResult = () => localStorage.removeItem('mbtiQuizResult');
-
             const loadProgress = () => {
                 const savedProgress = localStorage.getItem('mbtiQuizProgress');
                 if (savedProgress) {
@@ -354,11 +339,9 @@
                     }
                 }
             };
-            
             const initializeQuiz = () => {
                 const savedResult = localStorage.getItem('mbtiQuizResult');
                 const savedProgress = localStorage.getItem('mbtiQuizProgress');
-
                 if (savedResult) {
                     resultReport = JSON.parse(savedResult);
                     switchPage('result-page');
@@ -370,14 +353,12 @@
                     }
                 }
             };
-
             const switchPage = (pageId) => {
                 document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
                 document.getElementById(pageId).classList.add('active');
                 currentPage = pageId.replace('-page', '');
                 window.scrollTo(0, 0);
             };
-
             const renderQuiz = () => {
                 if (questions.length === 0) {
                     quizContentEl.innerHTML = `<p class="text-center text-red-500">無法載入題目，請稍後再試。</p>`;
@@ -386,24 +367,16 @@
                 const question = questions[currentQuestionIndex];
                 let html = `
                     <div class="flex flex-col items-center space-y-6 w-full max-w-lg">
-                        <div class="text-sm text-gray-500">
-                            第 ${currentQuestionIndex + 1} 題，共 ${questions.length} 題
-                        </div>
+                        <div class="text-sm text-gray-500">第 ${currentQuestionIndex + 1} 題，共 ${questions.length} 題</div>
                         <div class="w-full h-2 bg-gray-200 rounded-full">
                             <div class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: ${((currentQuestionIndex + 1) / questions.length) * 100}%"></div>
                         </div>
-                        <h2 class="text-2xl font-bold text-gray-800 text-center">${question.text}</h2>
-                `;
-
+                        <h2 class="text-2xl font-bold text-gray-800 text-center">${question.text}</h2>`;
                 if (question.type === 'mbti_choice') {
                     html += `<div class="space-y-4 w-full">`;
                     question.options.forEach(option => {
                         const isSelected = answers[question.id] === option.value;
-                        html += `
-                            <button type="button" data-question-id="${question.id}" data-value="${option.value}" class="quiz-option w-full p-4 text-left border rounded-lg transition-all duration-300 ${isSelected ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-800 hover:bg-gray-100'}">
-                                ${option.text}
-                            </button>
-                        `;
+                        html += `<button type="button" data-question-id="${question.id}" data-value="${option.value}" class="quiz-option w-full p-4 text-left border rounded-lg transition-all duration-300 ${isSelected ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-800 hover:bg-gray-100'}">${option.text}</button>`;
                     });
                     html += `</div>`;
                 } else if (question.type === 'likert') {
@@ -413,53 +386,36 @@
                                 <span>${question.labels[0]}</span>
                                 <span>${question.labels[4]}</span>
                             </div>
-                            <div class="flex w-full justify-between items-center">
-                    `;
+                            <div class="flex w-full justify-between items-center">`;
                     question.scale.forEach(value => {
                         const isSelected = answers[question.id] === value;
-                        html += `
-                            <button type="button" data-question-id="${question.id}" data-value="${value}" class="quiz-option w-12 h-12 text-lg rounded-full border transition-all duration-300 ${isSelected ? 'bg-indigo-600 text-white shadow-lg scale-110' : 'bg-white text-gray-800 hover:bg-gray-100'}">
-                                ${value}
-                            </button>
-                        `;
+                        html += `<button type="button" data-question-id="${question.id}" data-value="${value}" class="quiz-option w-12 h-12 text-lg rounded-full border transition-all duration-300 ${isSelected ? 'bg-indigo-600 text-white shadow-lg scale-110' : 'bg-white text-gray-800 hover:bg-gray-100'}">${value}</button>`;
                     });
                     html += `</div></div>`;
                 }
-
                 html += `</div>`;
                 quizContentEl.innerHTML = html;
-
                 document.querySelectorAll('.quiz-option').forEach(button => {
                     button.addEventListener('click', (e) => {
                         const { questionId, value } = e.currentTarget.dataset;
                         handleAnswer(questionId, value);
                     });
                 });
-
                 updateNavButtons();
             };
-            
             const renderResult = () => {
                 const report = resultReport;
                 if (!report || !report.mbtiType) {
                     resultContentEl.innerHTML = `<div class="text-center text-red-500">無法生成報告，請重新測驗。</div>`;
                     return;
                 }
-                
                 const percentages = report.strengths || {};
-                const strengthLabels = {
-                    E: { label: '外向', color: 'bg-blue-500' }, I: { label: '內向', color: 'bg-blue-400' },
-                    S: { label: '實感', color: 'bg-green-500' }, N: { label: '直覺', color: 'bg-green-400' },
-                    T: { label: '思考', color: 'bg-red-500' }, F: { label: '情感', color: 'bg-red-400' },
-                    J: { label: '判斷', color: 'bg-yellow-500' }, P: { label: '感知', color: 'bg-yellow-400' }
-                };
-
+                const strengthLabels = { E: { label: '外向', color: 'bg-blue-500' }, I: { label: '內向', color: 'bg-blue-400' }, S: { label: '實感', color: 'bg-green-500' }, N: { label: '直覺', color: 'bg-green-400' }, T: { label: '思考', color: 'bg-red-500' }, F: { label: '情感', color: 'bg-red-400' }, J: { label: '判斷', color: 'bg-yellow-500' }, P: { label: '感知', color: 'bg-yellow-400' } };
                 let strengthChartHtml = '';
                 for (const pair of ['EI', 'SN', 'TF', 'JP']) {
                     const [trait1, trait2] = pair.split('');
                     const percent1 = percentages[pair]?.[trait1] || 50;
                     const percent2 = percentages[pair]?.[trait2] || 50;
-                    
                     strengthChartHtml += `
                         <div class="bar-wrapper">
                             <div class="label-left">${strengthLabels[trait1].label}</div>
@@ -468,149 +424,45 @@
                                 <div class="bar ${strengthLabels[trait2].color}" style="width: ${percent2}%;">${percent2.toFixed(0)}%</div>
                             </div>
                             <div class="label-right">${strengthLabels[trait2].label}</div>
-                        </div>
-                    `;
+                        </div>`;
                 }
-
                 let html = `
                     <div class="p-6 bg-white rounded-xl shadow-lg w-full max-w-3xl">
                         <div class="space-y-8">
-                            <div class="text-center">
-                                <i data-lucide="check-circle" class="w-12 h-12 text-indigo-500 mx-auto mb-4"></i>
-                                <h2 class="text-4xl font-extrabold text-indigo-700">測驗結果報告</h2>
-                                <p class="text-xl text-gray-600 mt-2">為你的房仲職涯量身打造</p>
-                            </div>
-                            <div class="p-6 bg-indigo-50 rounded-lg text-center">
-                                <p class="text-2xl font-semibold text-indigo-800">你的房仲專屬人格標籤是：</p>
-                                <p class="text-4xl font-extrabold text-indigo-600 mt-2">${report.type_name}</p>
-                            </div>
-                            <div class="grid md:grid-cols-2 gap-8 items-center">
-                                <div class="p-6 bg-gray-50 rounded-lg shadow-inner">
-                                    <h3 class="text-2xl font-semibold flex items-center text-gray-800 mb-4"><i data-lucide="radar" class="w-6 h-6 mr-2 text-indigo-500"></i> 房仲超能力雷達圖</h3>
-                                    <canvas id="radarChart"></canvas>
-                                </div>
-                                <div class="p-6 bg-gray-50 rounded-lg shadow-inner strength-chart">
-                                    <h3 class="text-2xl font-semibold flex items-center text-gray-800 mb-4"><i data-lucide="pie-chart" class="w-6 h-6 mr-2 text-indigo-500"></i> 人格傾向強度分析</h3>
-                                    ${strengthChartHtml}
-                                </div>
-                            </div>
-                            <div class="p-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow">
-                                <h3 class="text-2xl font-semibold flex items-center text-yellow-800 mb-2"><i data-lucide="rocket" class="w-6 h-6 mr-2"></i> 今日馬上能做的行動</h3>
-                                <p class="text-gray-700 text-lg leading-relaxed">${report.immediate_action}</p>
-                            </div>
-                            <div class="grid md:grid-cols-2 gap-6">
-                                <div class="p-6 bg-gray-50 rounded-lg shadow-inner">
-                                    <h3 class="text-2xl font-semibold flex items-center text-green-700 mb-2"><i data-lucide="smile" class="w-6 h-6 mr-2"></i> 優勢與潛力 (個人化分析)</h3>
-                                    <p class="text-gray-700 leading-relaxed">${report.strengthsText}</p>
-                                </div>
-                                <div class="p-6 bg-gray-50 rounded-lg shadow-inner">
-                                    <h3 class="text-2xl font-semibold flex items-center text-red-700 mb-2"><i data-lucide="frown" class="w-6 h-6 mr-2"></i> 潛在弱點與挑戰</h3>
-                                    <p class="text-gray-700 leading-relaxed">${report.weaknesses}</p>
-                                </div>
-                            </div>
-                            <div class="p-6 bg-teal-50 border-l-4 border-teal-400 rounded-lg shadow">
-                                <h3 class="text-2xl font-semibold flex items-center text-teal-800 mb-2"><i data-lucide="users-2" class="w-6 h-6 mr-2"></i> 你在團隊中的角色與協作建議</h3>
-                                <p class="text-gray-700 leading-relaxed">${report.team_role}</p>
-                            </div>
-                            <div class="space-y-4">
-                                <h3 class="text-2xl font-semibold flex items-center text-indigo-700"><i data-lucide="lightbulb" class="w-6 h-6 mr-2"></i> 房仲工作建議</h3>
-                                <ul class="space-y-4">
-                                    <li class="p-4 bg-gray-50 rounded-lg shadow-sm"><p class="font-semibold text-lg text-gray-800">開發策略：</p><p class="text-gray-600">${report.client_strategy}</p></li>
-                                    <li class="p-4 bg-gray-50 rounded-lg shadow-sm"><p class="font-semibold text-lg text-gray-800">銷售策略：</p><p class="text-gray-600">${report.negotiation_strategy}</p></li>
-                                    <li class="p-4 bg-gray-50 rounded-lg shadow-sm"><p class="font-semibold text-lg text-gray-800">團隊協作建議：</p><p class="text-gray-600">${report.teamwork_suggestion}</p></li>
-                                </ul>
-                            </div>
-                            <div class="p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg shadow">
-                                <h3 class="text-2xl font-semibold flex items-center text-blue-800 mb-2"><i data-lucide="user-check" class="w-6 h-6 mr-2"></i> 給主管的管理建議</h3>
-                                <p class="text-gray-700 leading-relaxed">${report.management_suggestion}</p>
-                            </div>
+                            <div class="text-center"><i data-lucide="check-circle" class="w-12 h-12 text-indigo-500 mx-auto mb-4"></i><h2 class="text-4xl font-extrabold text-indigo-700">測驗結果報告</h2><p class="text-xl text-gray-600 mt-2">為你的房仲職涯量身打造</p></div>
+                            <div class="p-6 bg-indigo-50 rounded-lg text-center"><p class="text-2xl font-semibold text-indigo-800">你的房仲專屬人格標籤是：</p><p class="text-4xl font-extrabold text-indigo-600 mt-2">${report.type_name}</p></div>
+                            <div class="grid md:grid-cols-2 gap-8 items-center"><div class="p-6 bg-gray-50 rounded-lg shadow-inner"><h3 class="text-2xl font-semibold flex items-center text-gray-800 mb-4"><i data-lucide="radar" class="w-6 h-6 mr-2 text-indigo-500"></i> 房仲超能力雷達圖</h3><canvas id="radarChart"></canvas></div><div class="p-6 bg-gray-50 rounded-lg shadow-inner strength-chart"><h3 class="text-2xl font-semibold flex items-center text-gray-800 mb-4"><i data-lucide="pie-chart" class="w-6 h-6 mr-2 text-indigo-500"></i> 人格傾向強度分析</h3>${strengthChartHtml}</div></div>
+                            <div class="p-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow"><h3 class="text-2xl font-semibold flex items-center text-yellow-800 mb-2"><i data-lucide="rocket" class="w-6 h-6 mr-2"></i> 今日馬上能做的行動</h3><p class="text-gray-700 text-lg leading-relaxed">${report.immediate_action}</p></div>
+                            <div class="grid md:grid-cols-2 gap-6"><div class="p-6 bg-gray-50 rounded-lg shadow-inner"><h3 class="text-2xl font-semibold flex items-center text-green-700 mb-2"><i data-lucide="smile" class="w-6 h-6 mr-2"></i> 優勢與潛力 (個人化分析)</h3><p class="text-gray-700 leading-relaxed">${report.strengthsText}</p></div><div class="p-6 bg-gray-50 rounded-lg shadow-inner"><h3 class="text-2xl font-semibold flex items-center text-red-700 mb-2"><i data-lucide="frown" class="w-6 h-6 mr-2"></i> 潛在弱點與挑戰</h3><p class="text-gray-700 leading-relaxed">${report.weaknesses}</p></div></div>
+                            <div class="p-6 bg-teal-50 border-l-4 border-teal-400 rounded-lg shadow"><h3 class="text-2xl font-semibold flex items-center text-teal-800 mb-2"><i data-lucide="users-2" class="w-6 h-6 mr-2"></i> 你在團隊中的角色與協作建議</h3><p class="text-gray-700 leading-relaxed">${report.team_role}</p></div>
+                            <div class="space-y-4"><h3 class="text-2xl font-semibold flex items-center text-indigo-700"><i data-lucide="lightbulb" class="w-6 h-6 mr-2"></i> 房仲工作建議</h3><ul class="space-y-4"><li class="p-4 bg-gray-50 rounded-lg shadow-sm"><p class="font-semibold text-lg text-gray-800">開發策略：</p><p class="text-gray-600">${report.client_strategy}</p></li><li class="p-4 bg-gray-50 rounded-lg shadow-sm"><p class="font-semibold text-lg text-gray-800">銷售策略：</p><p class="text-gray-600">${report.negotiation_strategy}</p></li><li class="p-4 bg-gray-50 rounded-lg shadow-sm"><p class="font-semibold text-lg text-gray-800">團隊協作建議：</p><p class="text-gray-600">${report.teamwork_suggestion}</p></li></ul></div>
+                            <div class="p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg shadow"><h3 class="text-2xl font-semibold flex items-center text-blue-800 mb-2"><i data-lucide="user-check" class="w-6 h-6 mr-2"></i> 給主管的管理建議</h3><p class="text-gray-700 leading-relaxed">${report.management_suggestion}</p></div>
                             <div id="gemini-section" class="mt-8 pt-6 border-t-2 border-dashed border-indigo-200">${renderGeminiSection()}</div>
                         </div>
-                        
-                        <div class="mt-8 pt-6 border-t-2 border-indigo-200 text-center">
-                            <h3 class="text-2xl font-semibold text-gray-800 mb-4">分享成果 & 拓展事業</h3>
-                            <p class="text-gray-500 mb-6">將你的超能力分享出去，或製作專屬海報吸引客戶！</p>
+                        <div class="mt-8 pt-6 border-t-2 border-indigo-200 text-center"><h3 class="text-2xl font-semibold text-gray-800 mb-4">分享成果 & 拓展事業</h3><p class="text-gray-500 mb-6">將你的超能力分享出去，或製作專屬海報吸引客戶！</p>
                             <div class="flex flex-col sm:flex-row justify-center items-center gap-4 flex-wrap">
-                                <button id="generate-poster-btn" type="button" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-rose-500 text-white font-semibold rounded-full shadow-md hover:bg-rose-600 transition-all duration-300 transform hover:scale-105">
-                                    <i data-lucide="image" class="w-5 h-5 mr-2"></i> 生成個人海報
-                                </button>
-                                <button id="generate-business-card-btn" type="button" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-teal-500 text-white font-semibold rounded-full shadow-md hover:bg-teal-600 transition-all duration-300 transform hover:scale-105">
-                                    <i data-lucide="contact" class="w-5 h-5 mr-2"></i> 製作客戶名片海報
-                                </button>
-                                <button id="copy-share-btn" type="button" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-gray-600 text-white font-semibold rounded-full shadow-md hover:bg-gray-700 transition-all duration-300 transform hover:scale-105">
-                                    <i data-lucide="copy" class="w-5 h-5 mr-2"></i> 複製分享文案
-                                </button>
-                                <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-green-500 text-white font-semibold rounded-full shadow-md hover:bg-green-600 transition-all duration-300 transform hover:scale-105">
-                                    <i data-lucide="rocket" class="w-5 h-5 mr-2"></i> 招募未來菁英
-                                </a>
+                                <button id="generate-poster-btn" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-rose-500 text-white font-semibold rounded-full shadow-md hover:bg-rose-600 transition-all duration-300 transform hover:scale-105"><i data-lucide="image" class="w-5 h-5 mr-2"></i> 生成個人海報</button>
+                                <button id="generate-business-card-btn" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-teal-500 text-white font-semibold rounded-full shadow-md hover:bg-teal-600 transition-all duration-300 transform hover:scale-105"><i data-lucide="contact" class="w-5 h-5 mr-2"></i> 製作客戶名片海報</button>
+                                <button id="copy-share-btn" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-gray-600 text-white font-semibold rounded-full shadow-md hover:bg-gray-700 transition-all duration-300 transform hover:scale-105"><i data-lucide="copy" class="w-5 h-5 mr-2"></i> 複製分享文案</button>
+                                <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-green-500 text-white font-semibold rounded-full shadow-md hover:bg-green-600 transition-all duration-300 transform hover:scale-105"><i data-lucide="rocket" class="w-5 h-5 mr-2"></i> 招募未來菁英</a>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 resultContentEl.innerHTML = html;
                 lucide.createIcons();
-                
                 renderRadarChart(report.superpowerScores);
-                
                 document.getElementById('gemini-analysis-btn')?.addEventListener('click', handleGeminiAnalysis);
                 document.getElementById('generate-poster-btn').addEventListener('click', handleGeneratePoster);
                 document.getElementById('copy-share-btn').addEventListener('click', handleCopyShareText);
                 document.getElementById('generate-business-card-btn').addEventListener('click', handleGenerateBusinessCard);
             };
-
             const renderRadarChart = (scores) => {
                 const ctx = document.getElementById('radarChart')?.getContext('2d');
                 if (!ctx) return;
                 if (radarChartInstance) radarChartInstance.destroy();
-                
-                const afterDatasetsDrawPlugin = {
-                    id: 'afterDatasetsDrawPlugin',
-                    afterDatasetsDraw: (chart) => {
-                        const { ctx } = chart;
-                        ctx.save();
-                        const meta = chart.getDatasetMeta(0);
-                        meta.data.forEach((element, index) => {
-                            const dataString = chart.data.datasets[0].data[index].toString();
-                            const { x, y } = element;
-                            ctx.font = 'bold 14px sans-serif';
-                            ctx.fillStyle = 'rgba(99, 102, 241, 1)';
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            const angle = element.angle;
-                            const xOffset = Math.sin(angle) * 15;
-                            const yOffset = -Math.cos(angle) * 15;
-                            ctx.fillText(dataString, x + xOffset, y + yOffset);
-                        });
-                        ctx.restore();
-                    }
-                };
-
-                radarChartInstance = new Chart(ctx, {
-                    type: 'radar',
-                    data: {
-                        labels: Object.keys(scores),
-                        datasets: [{
-                            label: '房仲超能力',
-                            data: Object.values(scores),
-                            fill: true,
-                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                            borderColor: 'rgb(99, 102, 241)',
-                            pointBackgroundColor: 'rgb(99, 102, 241)',
-                            pointBorderColor: '#fff',
-                            pointHoverBackgroundColor: '#fff',
-                            pointHoverBorderColor: 'rgb(99, 102, 241)',
-                            pointRadius: 5,
-                            pointHoverRadius: 7
-                        }]
-                    },
-                    options: {
-                        scales: { r: { min: 0, max: 10, angleLines: { color: 'rgba(0, 0, 0, 0.1)' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, pointLabels: { font: { size: 14, weight: 'bold' }, color: '#374151' }, ticks: { stepSize: 2, backdropColor: 'rgba(255, 255, 255, 0.75)', color: 'rgba(0, 0, 0, 0.5)', font: { size: 12 } } } },
-                        plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                    },
-                    plugins: [afterDatasetsDrawPlugin]
-                });
+                const afterDatasetsDrawPlugin = { id: 'afterDatasetsDrawPlugin', afterDatasetsDraw: (chart) => { const { ctx } = chart; ctx.save(); const meta = chart.getDatasetMeta(0); meta.data.forEach((element, index) => { const dataString = chart.data.datasets[0].data[index].toString(); const { x, y } = element; ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = 'rgba(99, 102, 241, 1)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const angle = element.angle; const xOffset = Math.sin(angle) * 15; const yOffset = -Math.cos(angle) * 15; ctx.fillText(dataString, x + xOffset, y + yOffset); }); ctx.restore(); } };
+                radarChartInstance = new Chart(ctx, { type: 'radar', data: { labels: Object.keys(scores), datasets: [{ label: '房仲超能力', data: Object.values(scores), fill: true, backgroundColor: 'rgba(99, 102, 241, 0.2)', borderColor: 'rgb(99, 102, 241)', pointBackgroundColor: 'rgb(99, 102, 241)', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgb(99, 102, 241)', pointRadius: 5, pointHoverRadius: 7 }] }, options: { scales: { r: { min: 0, max: 10, angleLines: { color: 'rgba(0, 0, 0, 0.1)' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, pointLabels: { font: { size: 14, weight: 'bold' }, color: '#374151' }, ticks: { stepSize: 2, backdropColor: 'rgba(255, 255, 255, 0.75)', color: 'rgba(0, 0, 0, 0.5)', font: { size: 12 } } } }, plugins: { legend: { display: false }, tooltip: { enabled: false } } }, plugins: [afterDatasetsDrawPlugin] });
             };
-            
             const renderGeminiSection = () => {
                 if (isGeminiLoading) {
                     return `<div class="flex flex-col items-center justify-center text-center p-6 bg-gray-50 rounded-lg"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div><p class="mt-4 text-lg text-gray-600 font-semibold">您的專屬 AI 教練正在為您分析...</p><p class="text-sm text-gray-500">請稍候，這可能需要一點時間。</p></div>`;
@@ -620,12 +472,10 @@
                 }
                 return `<div class="text-center"><button id="gemini-analysis-btn" type="button" class="px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50"><i data-lucide="sparkles" class="inline-block mr-3"></i> 取得 AI 深度職涯分析</button></div>`;
             };
-
             const updateNavButtons = () => {
                 prevBtn.disabled = currentQuestionIndex === 0;
                 const currentQuestionId = questions[currentQuestionIndex].id;
                 const isAnswered = !!answers[currentQuestionId];
-                
                 if (currentQuestionIndex === questions.length - 1) {
                     nextBtn.classList.add('hidden');
                     submitBtn.classList.remove('hidden');
@@ -636,14 +486,11 @@
                     nextBtn.disabled = !isAnswered;
                 }
             };
-
-            // --- EVENT HANDLERS ---
             const handleAnswer = (questionId, value) => {
                 answers[questionId] = value;
                 renderQuiz();
                 saveProgress();
             };
-
             const handleNext = () => {
                 if (currentQuestionIndex < questions.length - 1) {
                     currentQuestionIndex++;
@@ -651,7 +498,6 @@
                     saveProgress();
                 }
             };
-
             const handlePrevious = () => {
                 if (currentQuestionIndex > 0) {
                     currentQuestionIndex--;
@@ -659,15 +505,12 @@
                     saveProgress();
                 }
             };
-
             const handleStartQuiz = async () => {
                 showLoader('正在準備題目...');
                 try {
                     const response = await fetch('/api/quiz?action=getQuestions');
                     if (!response.ok) throw new Error('無法從伺服器獲取題目');
-                    
                     questions = await response.json();
-                    
                     if (questions && questions.length > 0) {
                         switchPage('quiz-page');
                         renderQuiz();
@@ -681,37 +524,26 @@
                     hideLoader();
                 }
             };
-
             const handleSubmit = async () => {
                 showLoader('正在為您分析報告...');
                 clearProgress();
-
                 try {
                     const response = await fetch('/api/quiz?action=calculateResult', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ answers })
                     });
-
                     if (!response.ok) throw new Error('伺服器計算結果失敗');
-
                     resultReport = await response.json();
                     saveResult(resultReport);
-                    
                     switchPage('result-page');
                     renderResult();
-                    
                     if (user && db) {
                         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         const userId = user.uid || crypto.randomUUID();
                         const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
-                        await window.firebase.setDoc(userRef, {
-                            mbtiType: resultReport.mbtiType,
-                            type_name: resultReport.type_name,
-                            timestamp: new Date().toISOString(),
-                        });
+                        await window.firebase.setDoc(userRef, { mbtiType: resultReport.mbtiType, type_name: resultReport.type_name, timestamp: new Date().toISOString() });
                     }
-
                 } catch (error) {
                     console.error("Failed to submit and get result:", error);
                     alert('抱歉，提交答案時發生錯誤，請稍後再試。');
@@ -719,7 +551,6 @@
                     hideLoader();
                 }
             };
-            
             const handleGeneratePoster = async () => {
                 const posterTemplate = document.getElementById('share-poster-template');
                 const report = resultReport;
@@ -729,7 +560,6 @@
                 new Chart(posterCtx, { type: 'radar', data: { labels: Object.keys(report.superpowerScores), datasets: [{ label: '房仲超能力', data: Object.values(report.superpowerScores), fill: true, backgroundColor: 'rgba(255, 255, 255, 0.3)', borderColor: 'rgb(255, 255, 255)', pointBackgroundColor: 'rgb(255, 255, 255)', pointBorderColor: '#fff', }] }, options: { scales: { r: { min: 0, max: 10, angleLines: { color: 'rgba(255, 255, 255, 0.3)' }, grid: { color: 'rgba(255, 255, 255, 0.3)' }, pointLabels: { font: { size: 12, weight: 'bold' }, color: '#fff' }, ticks: { display: true, stepSize: 2, backdropColor: 'rgba(0,0,0,0)', color: 'rgba(255, 255, 255, 0.7)' } } }, plugins: { legend: { display: false }, tooltip: { enabled: false } } }, plugins: [posterAfterDatasetsDrawPlugin] });
                 setTimeout(async () => { try { const canvas = await html2canvas(posterTemplate, { useCORS: true }); const imageUrl = canvas.toDataURL('image/png'); posterImageContainer.innerHTML = `<img src="${imageUrl}" alt="分享海報" class="w-full h-auto">`; downloadPosterBtn.href = imageUrl; posterModal.style.display = 'flex'; } catch (error) { console.error('海報生成失敗:', error); posterImageContainer.innerHTML = `<p class="text-red-500">抱歉，海報生成失敗，請稍後再試。</p>`; posterModal.style.display = 'flex'; } }, 500);
             };
-
             const handleCopyShareText = () => {
                 const report = resultReport;
                 const shareText = `我在「房仲16型人格測驗」中測出的結果是【${report.type_name}】！${report.partner_info.text}！你也來測測看，發掘你在房仲業的超能力吧！ ${window.location.href}`;
@@ -747,28 +577,23 @@
                     setTimeout(() => { copyBtn.innerHTML = originalText; lucide.createIcons(); }, 2500);
                 } catch (err) { console.error('無法複製文字: ', err); } finally { document.body.removeChild(textArea); }
             };
-
             const handleGeminiAnalysis = async () => {
                 isGeminiLoading = true;
                 geminiAnalysis = '';
                 document.getElementById('gemini-section').innerHTML = renderGeminiSection();
                 lucide.createIcons();
-
                 const report = resultReport;
                 const prompt = `你是一位資深的房仲職涯教練，語氣專業、誠懇且充滿鼓勵。一位新人剛剛完成了16型人格測驗，這是他的結果報告：\n- MBTI 類型: ${report.mbtiType}\n- 房仲人格標籤: ${report.type_name}\n- 優勢與潛力: ${report.strengthsText}\n- 潛在弱點與挑戰: ${report.weaknesses}\n- 建議的開發策略: ${report.client_strategy}\n- 建議的銷售策略: ${report.negotiation_strategy}\n- 建議的團隊協作方式: ${report.teamwork_suggestion}\n### 房仲超能力雷達圖分數 (滿分10分)\n- 開發力: ${report.superpowerScores['開發力']}\n- 談判力: ${report.superpowerScores['談判力']}\n- 服務力: ${report.superpowerScores['服務力']}\n- 分析力: ${report.superpowerScores['分析力']}\n- 抗壓力: ${report.superpowerScores['抗壓力']}\n\n基於以上所有報告，請為這位新人撰寫一份詳細、充滿鼓勵且具體的5年職涯發展計畫。請用繁體中文回答，並包含以下幾個部分，用 markdown 格式化，標題請用 '###'：\n1.  **### 總體職涯定位與心態建議**: 根據他的性格，給予一個整體的職涯定位和成功心法。\n2.  **### 短期目標 (第1年)**: 列出3個具體的、可執行的目標，幫助他快速上手並建立信心。\n3.  **### 中期目標 (第2-3年)**: 提出2-3個進階目標，幫助他深化專業並建立個人品牌。\n4.  **### 長期目標 (第4-5年)**: 描繪一個長遠的發展藍圖，例如成為頂尖業務、團隊領導或特定領域的專家。\n5.  **### ✨ 你的專屬創意行銷點子 ✨**: 提供一個最符合他性格特質、與眾不同的創意行銷點子。\n6.  **### 🚀 房仲超能力分析與提升建議**: 根據雷達圖分數，首先讚揚分數最高的1-2項能力，並說明這對他的職涯有何幫助。接著，找出分數最低的2項能力，用鼓勵的語氣，為這兩項能力各提供一個具體的、可立即執行的練習方法或學習建議，幫助他補強弱項。`;
-                 
                 try {
                     const response = await fetch('/api/gemini', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ prompt: prompt })
                     });
-
                     if (!response.ok) {
                          const errorResult = await response.json();
                          throw new Error(errorResult.error.message || 'API request failed');
                     }
-                    
                     const result = await response.json();
                     geminiAnalysis = result.text;
                 } catch (error) {
@@ -780,7 +605,6 @@
                     lucide.createIcons();
                 }
             };
-
             const handleRetake = () => {
                 currentPage = 'intro';
                 answers = {};
@@ -795,14 +619,18 @@
                 clearResult();
                 switchPage('intro-page');
             };
-
-            // === 修改與新增: All Business Card and Cropper Functions ===
-            const handleGenerateBusinessCard = () => {
-                document.getElementById('form-mbti-type').value = `${resultReport.type_name} (${resultReport.mbtiType})`;
-                croppedPhotoDataUrl = null; // Reset previous crop
-                businessCardModal.style.display = 'flex';
+            
+            // === All Business Card and Cropper Functions (FIXED) ===
+            const resetBusinessCardForm = () => {
+                businessCardForm.reset();
+                croppedPhotoDataUrl = null;
             };
 
+            const handleGenerateBusinessCard = () => {
+                resetBusinessCardForm(); // Always start with a clean form
+                document.getElementById('form-mbti-type').value = `${resultReport.type_name} (${resultReport.mbtiType})`;
+                businessCardModal.style.display = 'flex';
+            };
             const readFileAsDataURL = (file) => {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -811,7 +639,6 @@
                     reader.readAsDataURL(file);
                 });
             };
-
             const initCropper = (imageSrc) => {
                 if(cropper) {
                     cropper.destroy();
@@ -825,14 +652,20 @@
                     autoCropArea: 0.8,
                 });
             };
-
             agentPhotoInput.addEventListener('change', (event) => {
                 const file = event.target.files[0];
                 if (file) {
-                    readFileAsDataURL(file).then(initCropper);
+                    if (!file.type.startsWith('image/')) {
+                        alert('您選擇的檔案不是圖片格式，請重新選擇。');
+                        event.target.value = ''; // Clear the invalid selection
+                        return;
+                    }
+                    readFileAsDataURL(file).then(initCropper).catch(err => {
+                        console.error("Error reading photo for cropper:", err);
+                        alert("讀取照片預覽失敗，請嘗試其他圖片。");
+                    });
                 }
             });
-
             confirmCropBtn.addEventListener('click', () => {
                 if (cropper) {
                     const canvas = cropper.getCroppedCanvas({
@@ -844,37 +677,25 @@
                     cropper.destroy();
                     cropper = null;
                     cropperModal.style.display = 'none';
-                    // Optional: show a checkmark or confirmation
                 }
             });
-
             cancelCropBtn.addEventListener('click', () => {
                 if (cropper) {
                     cropper.destroy();
                     cropper = null;
                 }
                 cropperModal.style.display = 'none';
-                agentPhotoInput.value = ''; // Clear the file input
+                agentPhotoInput.value = '';
                 croppedPhotoDataUrl = null;
             });
-
             const handleBusinessCardFormSubmit = async (event) => {
                 event.preventDefault();
                 
                 const form = event.target;
                 const formData = new FormData(form);
-                
-                const agentName = formData.get('agent-name');
-                const agentTitle = formData.get('agent-title');
-                const agentPhone = formData.get('agent-phone');
-                const agentLineId = formData.get('agent-lineid');
-                const agentCompany = formData.get('agent-company');
-                
-                // === 修改點：從 form elements 取得檔案 ===
                 const photoFile = form.elements['agent-photo'].files[0];
                 const qrcodeFile = form.elements['agent-qrcode'].files[0];
 
-                // === 修改點：增強檔案驗證 ===
                 if (!croppedPhotoDataUrl || !photoFile) {
                     alert('請務必上傳並確認裁切您的個人形象照！');
                     return;
@@ -883,25 +704,17 @@
                     alert('請務必上傳個人 QR Code！');
                     return;
                 }
-                // 檢查檔案類型是否為圖片
-                if (!photoFile.type.startsWith('image/')){
-                    alert('您上傳的個人形象照格式不正確，請選擇圖片檔案（如 .jpg, .png）。');
-                    return;
-                }
                 if (!qrcodeFile.type.startsWith('image/')){
                     alert('您上傳的 QR Code 格式不正確，請選擇圖片檔案（如 .jpg, .png）。');
                     return;
                 }
                 
-                // 修正：將等待提示移到所有檢查之後
                 showLoader('資料上傳中，並為您生成海報...');
 
                 try {
                     const qrcodeDataUrl = await readFileAsDataURL(qrcodeFile);
-                    
                     const report = resultReport;
                     const cardTemplate = document.getElementById('business-card-template');
-
                     cardTemplate.innerHTML = `
                         <div class="w-full h-full p-5 flex flex-col justify-between relative font-sans" style="background: radial-gradient(circle, #4a4a4a 0%, #1a1a1a 100%);">
                             <div class="absolute top-0 left-0 w-full h-full opacity-5" style="background-image: url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.4%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
@@ -909,9 +722,9 @@
                                 <div class="w-40 h-40 mb-4 rounded-full overflow-hidden border-4 border-white/80" style="box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);">
                                     <img src="${croppedPhotoDataUrl}" class="w-full h-full object-cover" alt="個人形象照">
                                 </div>
-                                <h2 class="text-5xl font-extrabold" style="color: transparent; background: linear-gradient(145deg, #ffffef, #ffd700); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));">${agentName}</h2>
-                                <p class="text-xl text-gray-300">${agentTitle}</p>
-                                <p class="text-md text-gray-400 mt-1">${agentCompany}</p>
+                                <h2 class="text-5xl font-extrabold" style="color: transparent; background: linear-gradient(145deg, #ffffef, #ffd700); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));">${formData.get('agent-name')}</h2>
+                                <p class="text-xl text-gray-300">${formData.get('agent-title')}</p>
+                                <p class="text-md text-gray-400 mt-1">${formData.get('agent-company')}</p>
                             </div>
                             <div class="my-4 text-center px-4">
                                 <div class="w-full h-px" style="background: linear-gradient(90deg, transparent, #FFD700, transparent);"></div>
@@ -921,8 +734,8 @@
                             </div>
                             <div class="flex items-center justify-between bg-black/30 p-4 rounded-lg backdrop-blur-sm border border-white/10">
                                 <div class="space-y-2 text-sm">
-                                    <div class="flex items-center"><i data-lucide="phone" class="w-4 h-4 mr-2 text-gray-300"></i><span class="text-gray-200">${agentPhone}</span></div>
-                                    <div class="flex items-center"><i data-lucide="message-square" class="w-4 h-4 mr-2 text-gray-300"></i><span class="text-gray-200">LINE: ${agentLineId}</span></div>
+                                    <div class="flex items-center"><i data-lucide="phone" class="w-4 h-4 mr-2 text-gray-300"></i><span class="text-gray-200">${formData.get('agent-phone')}</span></div>
+                                    <div class="flex items-center"><i data-lucide="message-square" class="w-4 h-4 mr-2 text-gray-300"></i><span class="text-gray-200">LINE: ${formData.get('agent-lineid')}</span></div>
                                 </div>
                                 <div class="w-20 h-20 p-1 bg-white rounded-md">
                                     <img src="${qrcodeDataUrl}" class="w-full h-full object-contain" alt="QR Code">
@@ -930,12 +743,10 @@
                             </div>
                         </div>`;
                     lucide.createIcons();
-                    
                     await fetch("/", {
                         method: "POST",
                         body: formData,
                     });
-
                     setTimeout(async () => {
                         try {
                             const canvas = await html2canvas(cardTemplate, { useCORS: true, scale: 2, backgroundColor: '#1a1a1a' });
@@ -944,6 +755,7 @@
                             downloadPosterBtnBusiness.href = imageUrl;
                             businessCardModal.style.display = 'none';
                             posterModalBusiness.style.display = 'flex';
+                            resetBusinessCardForm(); // Reset form after success
                         } catch (canvasError) {
                             console.error('名片海報生成失敗:', canvasError);
                             alert('抱歉，名片海報生成失敗，請稍後再試。');
@@ -951,17 +763,14 @@
                             hideLoader();
                         }
                     }, 500);
-
                 } catch (fileReadError) {
                     console.error('讀取圖片失敗:', fileReadError);
-                    // 這裡的錯誤提示現在應該很少會出現了，因為前面已經檢查過格式
-                    alert('讀取圖片時發生無法預期的錯誤，請稍後再試。');
+                    alert('讀取 QR Code 圖片時發生錯誤，請確認檔案格式是否正確。');
                     hideLoader();
                 }
             };
 
             // --- INITIALIZATION ---
-            
             const setupFirebase = async () => {
                 try {
                     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
@@ -982,7 +791,6 @@
                     console.error("Firebase initialization failed:", error);
                 }
             };
-            
             startQuizBtn.addEventListener('click', handleStartQuiz);
             nextBtn.addEventListener('click', handleNext);
             prevBtn.addEventListener('click', handlePrevious);
@@ -991,9 +799,13 @@
             resumeBtn.addEventListener('click', () => { resumeModal.style.display = 'none'; handleStartQuiz().then(loadProgress); });
             startNewBtn.addEventListener('click', () => { resumeModal.style.display = 'none'; clearProgress(); answers = {}; currentQuestionIndex = 0; });
             closePosterModalBtn.addEventListener('click', () => { posterModal.style.display = 'none'; });
-
+            
+            // === 修改點：將重置邏輯綁定到取消按鈕 ===
+            closeBusinessCardModalBtn.addEventListener('click', () => {
+                businessCardModal.style.display = 'none';
+                resetBusinessCardForm();
+            });
             businessCardForm.addEventListener('submit', handleBusinessCardFormSubmit);
-            closeBusinessCardModalBtn.addEventListener('click', () => { businessCardModal.style.display = 'none'; });
             closePosterModalBusinessBtn.addEventListener('click', () => { posterModalBusiness.style.display = 'none'; });
             
             lucide.createIcons();
@@ -1003,4 +815,6 @@
     </script>
 </body>
 </html>
+}
+
 
