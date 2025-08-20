@@ -1,0 +1,10 @@
+[build]
+  # This tells Netlify where your functions are located.
+  functions = "netlify/functions"
+
+# This rule makes your functions accessible through a cleaner URL.
+# For example, requests to /api/quiz will be routed to /.netlify/functions/quiz
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

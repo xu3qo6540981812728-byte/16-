@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房仲新人16型人格測驗</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart.js for Radar Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- html2canvas for Poster Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Firebase SDKs (Optional, if you still want to save user data) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.firebase = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
+            onAuthStateChanged, getFirestore, doc, setDoc
+        };
+    </script>
+
+    <style>
+        .page { display: none; animation: fadeIn 0.5s ease-in-out; }
+        .page.active { display: flex; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .prose h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .strength-chart .bar-wrapper { display: flex; align-items: center; margin-bottom: 1rem; }
+        .strength-chart .bar-labels { display: flex; justify-content: space-between; font-size: 0.875rem; color: #4b5563; }
+        .strength-chart .bar-container { flex-grow: 1; height: 1.75rem; border-radius: 0.5rem; overflow: hidden; background-color: #e5e7eb; display: flex; font-weight: 600; color: white; }
+        .strength-chart .bar { height: 100%; transition: width 0.5s ease-in-out; display: flex; align-items: center; justify-content: center; }
+        .label-left { text-align: right; width: 4rem; margin-right: 0.75rem; font-weight: bold; }
+        .label-right { text-align: left; width: 4rem; margin-left: 0.75rem; font-weight: bold; }
+        #share-poster-template { width: 375px; height: 667px; position: absolute; left: -9999px; top: -9999px; font-family: 'Helvetica Neue', sans-serif; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Loading Modal -->
+    <div id="loading-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center">
+            <div class="loader mx-auto"></div>
+            <p id="loading-text" class="text-gray-600 mt-4">載入中...</p>
+        </div>
+    </div>
+
+    <!-- Resume Modal -->
+    <div id="resume-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center transform transition-all" style="animation: fadeIn 0.3s ease-out;">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">發現未完成的測驗</h2>
+            <p class="text-gray-600 mb-8">您上次似乎沒有完成測驗，<br>要從上次離開的地方繼續嗎？</p>
+            <div class="flex justify-around gap-4">
+                <button id="start-new-btn" class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition-all duration-200">重新開始</button>
+                <button id="resume-btn" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200">繼續測驗</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Poster Modal -->
+    <div id="poster-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center transform transition-all relative" style="animation: fadeIn 0.3s ease-out;">
+            <button id="close-poster-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">你的專屬房仲戰力海報</h2>
+            <div id="poster-image-container" class="mb-4 border-2 border-gray-200 rounded-lg overflow-hidden"></div>
+            <p class="text-gray-600 mb-4">長按圖片即可儲存或分享！</p>
+            <a id="download-poster-btn" href="#" download="my-real-estate-superpower.png" class="inline-block w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200">
+                下載海報
+            </a>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <!-- Introduction Page -->
+        <div id="intro-page" class="page active flex-col items-center justify-between min-h-screen p-4 text-center">
+            <div class="flex-grow flex items-center justify-center w-full">
+                <div class="p-8 bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+                    <h1 class="text-4xl font-extrabold text-indigo-700 mb-4">
+                        房仲新人16型人格測驗
+                    </h1>
+                    <p class="text-lg text-gray-600 mb-6 leading-relaxed">
+                        這份問卷旨在幫助您探索在房仲工作上的個人風格偏好，作為職涯發展的參考。它並非嚴格的心理學診斷，測驗結果可能因您當下的心境與情境而異。
+                    </p>
+                    <button id="start-quiz-btn" type="button" class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                        開始測驗 <i data-lucide="chevron-right" class="inline-block ml-2"></i>
+                    </button>
+                </div>
+            </div>
+            <footer class="w-full py-6 mt-8">
+                <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 px-4">
+                    <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+                        <a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            by 桃園房仲專業顧問培智
+                        </a>
+                        <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            加入我們
+                        </a>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        <!-- Quiz Page -->
+        <div id="quiz-page" class="page flex-col items-center justify-between min-h-screen p-4">
+            <div class="flex-grow flex items-center justify-center w-full">
+                <div class="p-8 bg-white rounded-xl shadow-2xl w-full max-w-xl flex flex-col items-center">
+                    <div id="quiz-content" class="w-full"></div>
+                    <div class="mt-8 flex justify-between w-full">
+                        <button id="prev-btn" type="button" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-full shadow-md hover:bg-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i data-lucide="arrow-left" class="inline-block mr-2"></i> 上一題
+                        </button>
+                        <button id="next-btn" type="button" class="px-6 py-2 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            下一題 <i data-lucide="arrow-right" class="inline-block ml-2"></i>
+                        </button>
+                        <button id="submit-btn" type="button" class="hidden px-6 py-2 bg-green-600 text-white rounded-full shadow-md hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            完成測驗
+                        </button>
+                    </div>
+                </div>
+            </div>
+             <footer class="w-full py-6 mt-8">
+                <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 px-4">
+                    <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+                        <a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            by 桃園房仲專業顧問培智
+                        </a>
+                        <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            加入我們
+                        </a>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        <!-- Result Page -->
+        <div id="result-page" class="page flex-col items-center justify-between min-h-screen p-4">
+            <div class="flex-grow flex items-center justify-center w-full my-8">
+                <div class="flex flex-col items-center">
+                    <div id="result-content" class="w-full max-w-3xl"></div>
+                    <button id="retake-btn" type="button" class="mt-8 px-6 py-2 bg-gray-200 text-gray-700 rounded-full shadow-md hover:bg-gray-300 transition-all duration-200">
+                        返回首頁
+                    </button>
+                </div>
+            </div>
+             <footer class="w-full py-6 mt-8">
+                <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 px-4">
+                    <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+                        <a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            by 桃園房仲專業顧問培智
+                        </a>
+                        <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            加入我們
+                        </a>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Hidden Poster Template for html2canvas -->
+    <div id="share-poster-template"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- STATE MANAGEMENT ---
+            let currentPage = 'intro';
+            let answers = {};
+            let currentQuestionIndex = 0;
+            let user = null;
+            let db = null;
+            let auth = null;
+            let geminiAnalysis = '';
+            let isGeminiLoading = false;
+            let resultReport = {};
+            let radarChartInstance = null;
+            let questions = []; // Questions will be fetched from backend
+
+            // --- DOM ELEMENTS ---
+            const introPage = document.getElementById('intro-page');
+            const quizPage = document.getElementById('quiz-page');
+            const resultPage = document.getElementById('result-page');
+            const startQuizBtn = document.getElementById('start-quiz-btn');
+            const quizContentEl = document.getElementById('quiz-content');
+            const resultContentEl = document.getElementById('result-content');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const submitBtn = document.getElementById('submit-btn');
+            const retakeBtn = document.getElementById('retake-btn');
+            const resumeModal = document.getElementById('resume-modal');
+            const resumeBtn = document.getElementById('resume-btn');
+            const startNewBtn = document.getElementById('start-new-btn');
+            const posterModal = document.getElementById('poster-modal');
+            const closePosterModalBtn = document.getElementById('close-poster-modal');
+            const posterImageContainer = document.getElementById('poster-image-container');
+            const downloadPosterBtn = document.getElementById('download-poster-btn');
+            const loadingModal = document.getElementById('loading-modal');
+            const loadingText = document.getElementById('loading-text');
+
+            // --- FUNCTIONS ---
+            
+            const showLoader = (text = '載入中...') => {
+                loadingText.textContent = text;
+                loadingModal.style.display = 'flex';
+            };
+
+            const hideLoader = () => {
+                loadingModal.style.display = 'none';
+            };
+
+            const saveProgress = () => {
+                const progress = {
+                    answers: answers,
+                    currentQuestionIndex: currentQuestionIndex
+                };
+                localStorage.setItem('mbtiQuizProgress', JSON.stringify(progress));
+            };
+
+            const clearProgress = () => localStorage.removeItem('mbtiQuizProgress');
+            const saveResult = (report) => localStorage.setItem('mbtiQuizResult', JSON.stringify(report));
+            const clearResult = () => localStorage.removeItem('mbtiQuizResult');
+
+            const loadProgress = () => {
+                const savedProgress = localStorage.getItem('mbtiQuizProgress');
+                if (savedProgress) {
+                    const { answers: savedAnswers, currentQuestionIndex: savedIndex } = JSON.parse(savedProgress);
+                    if (savedAnswers && Object.keys(savedAnswers).length > 0) {
+                        answers = savedAnswers;
+                        currentQuestionIndex = savedIndex;
+                        switchPage('quiz-page');
+                        renderQuiz();
+                    } else {
+                        clearProgress();
+                    }
+                }
+            };
+            
+            const initializeQuiz = () => {
+                const savedResult = localStorage.getItem('mbtiQuizResult');
+                const savedProgress = localStorage.getItem('mbtiQuizProgress');
+
+                if (savedResult) {
+                    resultReport = JSON.parse(savedResult);
+                    switchPage('result-page');
+                    renderResult();
+                } else if (savedProgress) {
+                    const { answers: savedAnswers } = JSON.parse(savedProgress);
+                    if (savedAnswers && Object.keys(savedAnswers).length > 0) {
+                        resumeModal.style.display = 'flex';
+                    }
+                }
+            };
+
+            const switchPage = (pageId) => {
+                document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+                document.getElementById(pageId).classList.add('active');
+                currentPage = pageId.replace('-page', '');
+                window.scrollTo(0, 0);
+            };
+
+            const renderQuiz = () => {
+                if (questions.length === 0) {
+                    quizContentEl.innerHTML = `<p class="text-center text-red-500">無法載入題目，請稍後再試。</p>`;
+                    return;
+                }
+                const question = questions[currentQuestionIndex];
+                let html = `
+                    <div class="flex flex-col items-center space-y-6 w-full max-w-lg">
+                        <div class="text-sm text-gray-500">
+                            第 ${currentQuestionIndex + 1} 題，共 ${questions.length} 題
+                        </div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full">
+                            <div class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: ${((currentQuestionIndex + 1) / questions.length) * 100}%"></div>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-800 text-center">${question.text}</h2>
+                `;
+
+                if (question.type === 'mbti_choice') {
+                    html += `<div class="space-y-4 w-full">`;
+                    question.options.forEach(option => {
+                        const isSelected = answers[question.id] === option.value;
+                        html += `
+                            <button type="button" data-question-id="${question.id}" data-value="${option.value}" class="quiz-option w-full p-4 text-left border rounded-lg transition-all duration-300 ${isSelected ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-800 hover:bg-gray-100'}">
+                                ${option.text}
+                            </button>
+                        `;
+                    });
+                    html += `</div>`;
+                } else if (question.type === 'likert') {
+                    html += `
+                        <div class="flex flex-col items-center space-y-4 w-full">
+                            <div class="flex justify-between w-full px-2 text-sm text-gray-500">
+                                <span>${question.labels[0]}</span>
+                                <span>${question.labels[4]}</span>
+                            </div>
+                            <div class="flex w-full justify-between items-center">
+                    `;
+                    question.scale.forEach(value => {
+                        const isSelected = answers[question.id] === value;
+                        html += `
+                            <button type="button" data-question-id="${question.id}" data-value="${value}" class="quiz-option w-12 h-12 text-lg rounded-full border transition-all duration-300 ${isSelected ? 'bg-indigo-600 text-white shadow-lg scale-110' : 'bg-white text-gray-800 hover:bg-gray-100'}">
+                                ${value}
+                            </button>
+                        `;
+                    });
+                    html += `</div></div>`;
+                }
+
+                html += `</div>`;
+                quizContentEl.innerHTML = html;
+
+                document.querySelectorAll('.quiz-option').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const { questionId, value } = e.currentTarget.dataset;
+                        handleAnswer(questionId, value);
+                    });
+                });
+
+                updateNavButtons();
+            };
+            
+            const renderResult = () => {
+                const report = resultReport;
+                if (!report || !report.mbtiType) {
+                    resultContentEl.innerHTML = `<div class="text-center text-red-500">無法生成報告，請重新測驗。</div>`;
+                    return;
+                }
+                
+                const strengths = report.strengths || {};
+                const strengthLabels = {
+                    E: { label: '外向', color: 'bg-blue-500' }, I: { label: '內向', color: 'bg-blue-400' },
+                    S: { label: '實感', color: 'bg-green-500' }, N: { label: '直覺', color: 'bg-green-400' },
+                    T: { label: '思考', color: 'bg-red-500' }, F: { label: '情感', color: 'bg-red-400' },
+                    J: { label: '判斷', color: 'bg-yellow-500' }, P: { label: '感知', color: 'bg-yellow-400' }
+                };
+
+                let strengthChartHtml = '';
+                for (const pair of ['EI', 'SN', 'TF', 'JP']) {
+                    const [trait1, trait2] = pair.split('');
+                    const percent1 = strengths[pair]?.[trait1] || 50;
+                    const percent2 = strengths[pair]?.[trait2] || 50;
+                    
+                    strengthChartHtml += `
+                        <div class="bar-wrapper">
+                            <div class="label-left">${strengthLabels[trait1].label}</div>
+                            <div class="bar-container">
+                                <div class="bar ${strengthLabels[trait1].color}" style="width: ${percent1}%;">${percent1.toFixed(0)}%</div>
+                                <div class="bar ${strengthLabels[trait2].color}" style="width: ${percent2}%;">${percent2.toFixed(0)}%</div>
+                            </div>
+                            <div class="label-right">${strengthLabels[trait2].label}</div>
+                        </div>
+                    `;
+                }
+
+                let html = `
+                    <div class="p-6 bg-white rounded-xl shadow-lg w-full max-w-3xl">
+                        <div class="space-y-8">
+                            <div class="text-center">
+                                <i data-lucide="check-circle" class="w-12 h-12 text-indigo-500 mx-auto mb-4"></i>
+                                <h2 class="text-4xl font-extrabold text-indigo-700">測驗結果報告</h2>
+                                <p class="text-xl text-gray-600 mt-2">為你的房仲職涯量身打造</p>
+                            </div>
+                            <div class="p-6 bg-indigo-50 rounded-lg text-center">
+                                <p class="text-2xl font-semibold text-indigo-800">你的房仲專屬人格標籤是：</p>
+                                <p class="text-4xl font-extrabold text-indigo-600 mt-2">${report.type_name}</p>
+                            </div>
+                            <div class="grid md:grid-cols-2 gap-8 items-center">
+                                <div class="p-6 bg-gray-50 rounded-lg shadow-inner">
+                                    <h3 class="text-2xl font-semibold flex items-center text-gray-800 mb-4"><i data-lucide="radar" class="w-6 h-6 mr-2 text-indigo-500"></i> 房仲超能力雷達圖</h3>
+                                    <canvas id="radarChart"></canvas>
+                                </div>
+                                <div class="p-6 bg-gray-50 rounded-lg shadow-inner strength-chart">
+                                    <h3 class="text-2xl font-semibold flex items-center text-gray-800 mb-4"><i data-lucide="pie-chart" class="w-6 h-6 mr-2 text-indigo-500"></i> 人格傾向強度分析</h3>
+                                    ${strengthChartHtml}
+                                </div>
+                            </div>
+                            <div class="p-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow">
+                                <h3 class="text-2xl font-semibold flex items-center text-yellow-800 mb-2"><i data-lucide="rocket" class="w-6 h-6 mr-2"></i> 今日馬上能做的行動</h3>
+                                <p class="text-gray-700 text-lg leading-relaxed">${report.immediate_action}</p>
+                            </div>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div class="p-6 bg-gray-50 rounded-lg shadow-inner">
+                                    <h3 class="text-2xl font-semibold flex items-center text-green-700 mb-2"><i data-lucide="smile" class="w-6 h-6 mr-2"></i> 優勢與潛力</h3>
+                                    <p class="text-gray-700 leading-relaxed">${report.strengthsText}</p>
+                                </div>
+                                <div class="p-6 bg-gray-50 rounded-lg shadow-inner">
+                                    <h3 class="text-2xl font-semibold flex items-center text-red-700 mb-2"><i data-lucide="frown" class="w-6 h-6 mr-2"></i> 潛在弱點與挑戰</h3>
+                                    <p class="text-gray-700 leading-relaxed">${report.weaknesses}</p>
+                                </div>
+                            </div>
+                            <div class="p-6 bg-teal-50 border-l-4 border-teal-400 rounded-lg shadow">
+                                <h3 class="text-2xl font-semibold flex items-center text-teal-800 mb-2"><i data-lucide="users-2" class="w-6 h-6 mr-2"></i> 你在團隊中的角色與協作建議</h3>
+                                <p class="text-gray-700 leading-relaxed">${report.team_role}</p>
+                            </div>
+                            <div class="space-y-4">
+                                <h3 class="text-2xl font-semibold flex items-center text-indigo-700"><i data-lucide="lightbulb" class="w-6 h-6 mr-2"></i> 房仲工作建議</h3>
+                                <ul class="space-y-4">
+                                    <li class="p-4 bg-gray-50 rounded-lg shadow-sm"><p class="font-semibold text-lg text-gray-800">開發策略：</p><p class="text-gray-600">${report.client_strategy}</p></li>
+                                    <li class="p-4 bg-gray-50 rounded-lg shadow-sm"><p class="font-semibold text-lg text-gray-800">銷售策略：</p><p class="text-gray-600">${report.negotiation_strategy}</p></li>
+                                    <li class="p-4 bg-gray-50 rounded-lg shadow-sm"><p class="font-semibold text-lg text-gray-800">團隊協作建議：</p><p class="text-gray-600">${report.teamwork_suggestion}</p></li>
+                                </ul>
+                            </div>
+                            <div class="p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg shadow">
+                                <h3 class="text-2xl font-semibold flex items-center text-blue-800 mb-2"><i data-lucide="user-check" class="w-6 h-6 mr-2"></i> 給主管的管理建議</h3>
+                                <p class="text-gray-700 leading-relaxed">${report.management_suggestion}</p>
+                            </div>
+                            <div id="gemini-section" class="mt-8 pt-6 border-t-2 border-dashed border-indigo-200">${renderGeminiSection()}</div>
+                        </div>
+                        
+                        <!-- === MODIFIED SECTION: Share & Recruit === -->
+                        <div class="mt-8 pt-6 border-t-2 border-indigo-200 text-center">
+                            <h3 class="text-2xl font-semibold text-gray-800 mb-4">分享你的房仲超能力！</h3>
+                            <p class="text-gray-500 mb-6">讓朋友和同事也來測測看，誰是你的神隊友！</p>
+                            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                                <button id="generate-poster-btn" type="button" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-rose-500 text-white font-semibold rounded-full shadow-md hover:bg-rose-600 transition-all duration-300 transform hover:scale-105">
+                                    <i data-lucide="image" class="w-5 h-5 mr-2"></i> 生成分享海報
+                                </button>
+                                <button id="copy-share-btn" type="button" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-gray-600 text-white font-semibold rounded-full shadow-md hover:bg-gray-700 transition-all duration-300 transform hover:scale-105">
+                                    <i data-lucide="copy" class="w-5 h-5 mr-2"></i> 複製分享文案
+                                </button>
+                                <!-- === NEW BUTTON ADDED HERE === -->
+                                <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-green-500 text-white font-semibold rounded-full shadow-md hover:bg-green-600 transition-all duration-300 transform hover:scale-105">
+                                    <i data-lucide="rocket" class="w-5 h-5 mr-2"></i> 招募未來菁英
+                                </a>
+                            </div>
+                        </div>
+                        <!-- === END OF MODIFIED SECTION === -->
+                    </div>
+                `;
+                resultContentEl.innerHTML = html;
+                lucide.createIcons();
+                
+                renderRadarChart(report.superpowerScores);
+                
+                document.getElementById('gemini-analysis-btn')?.addEventListener('click', handleGeminiAnalysis);
+                document.getElementById('generate-poster-btn').addEventListener('click', handleGeneratePoster);
+                document.getElementById('copy-share-btn').addEventListener('click', handleCopyShareText);
+            };
+
+            const renderRadarChart = (scores) => {
+                const ctx = document.getElementById('radarChart')?.getContext('2d');
+                if (!ctx) return;
+                if (radarChartInstance) radarChartInstance.destroy();
+                
+                const afterDatasetsDrawPlugin = {
+                    id: 'afterDatasetsDrawPlugin',
+                    afterDatasetsDraw: (chart) => {
+                        const { ctx } = chart;
+                        ctx.save();
+                        const meta = chart.getDatasetMeta(0);
+                        meta.data.forEach((element, index) => {
+                            const dataString = chart.data.datasets[0].data[index].toString();
+                            const { x, y } = element;
+                            ctx.font = 'bold 14px sans-serif';
+                            ctx.fillStyle = 'rgba(99, 102, 241, 1)';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            const angle = element.angle;
+                            const xOffset = Math.sin(angle) * 15;
+                            const yOffset = -Math.cos(angle) * 15;
+                            ctx.fillText(dataString, x + xOffset, y + yOffset);
+                        });
+                        ctx.restore();
+                    }
+                };
+
+                radarChartInstance = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: Object.keys(scores),
+                        datasets: [{
+                            label: '房仲超能力',
+                            data: Object.values(scores),
+                            fill: true,
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                            borderColor: 'rgb(99, 102, 241)',
+                            pointBackgroundColor: 'rgb(99, 102, 241)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(99, 102, 241)',
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        scales: { r: { min: 0, max: 10, angleLines: { color: 'rgba(0, 0, 0, 0.1)' }, grid: { color: 'rgba(0, 0, 0, 0.1)' }, pointLabels: { font: { size: 14, weight: 'bold' }, color: '#374151' }, ticks: { stepSize: 2, backdropColor: 'rgba(255, 255, 255, 0.75)', color: 'rgba(0, 0, 0, 0.5)', font: { size: 12 } } } },
+                        plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                    },
+                    plugins: [afterDatasetsDrawPlugin]
+                });
+            };
+            
+            const renderGeminiSection = () => {
+                if (isGeminiLoading) {
+                    return `<div class="flex flex-col items-center justify-center text-center p-6 bg-gray-50 rounded-lg"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div><p class="mt-4 text-lg text-gray-600 font-semibold">您的專屬 AI 教練正在為您分析...</p><p class="text-sm text-gray-500">請稍候，這可能需要一點時間。</p></div>`;
+                }
+                if (geminiAnalysis) {
+                    return `<div class="p-6 bg-indigo-50 rounded-lg shadow-inner space-y-4"><h3 class="text-3xl font-extrabold flex items-center text-indigo-800 mb-4"><i data-lucide="brain-circuit" class="w-8 h-8 mr-3 text-indigo-500"></i> AI 深度職涯分析報告</h3><div class="prose prose-indigo max-w-none">${geminiAnalysis.replace(/### (.*?)\n/g, '<h3>$1</h3>').replace(/\n/g, '<br />')}</div></div>`;
+                }
+                return `<div class="text-center"><button id="gemini-analysis-btn" type="button" class="px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50"><i data-lucide="sparkles" class="inline-block mr-3"></i> 取得 AI 深度職涯分析</button></div>`;
+            };
+
+            const updateNavButtons = () => {
+                prevBtn.disabled = currentQuestionIndex === 0;
+                const currentQuestionId = questions[currentQuestionIndex].id;
+                const isAnswered = !!answers[currentQuestionId];
+                
+                if (currentQuestionIndex === questions.length - 1) {
+                    nextBtn.classList.add('hidden');
+                    submitBtn.classList.remove('hidden');
+                    submitBtn.disabled = !isAnswered;
+                } else {
+                    nextBtn.classList.remove('hidden');
+                    submitBtn.classList.add('hidden');
+                    nextBtn.disabled = !isAnswered;
+                }
+            };
+
+            // --- EVENT HANDLERS ---
+            const handleAnswer = (questionId, value) => {
+                answers[questionId] = value;
+                renderQuiz();
+                saveProgress();
+            };
+
+            const handleNext = () => {
+                if (currentQuestionIndex < questions.length - 1) {
+                    currentQuestionIndex++;
+                    renderQuiz();
+                    saveProgress();
+                }
+            };
+
+            const handlePrevious = () => {
+                if (currentQuestionIndex > 0) {
+                    currentQuestionIndex--;
+                    renderQuiz();
+                    saveProgress();
+                }
+            };
+
+            const handleStartQuiz = async () => {
+                showLoader('正在準備題目...');
+                try {
+                    // Fetch questions from our new backend function
+                    const response = await fetch('/.netlify/functions/quiz?action=getQuestions');
+                    if (!response.ok) throw new Error('無法從伺服器獲取題目');
+                    
+                    questions = await response.json();
+                    
+                    if (questions && questions.length > 0) {
+                        switchPage('quiz-page');
+                        renderQuiz();
+                    } else {
+                        throw new Error('題目資料格式不正確');
+                    }
+                } catch (error) {
+                    console.error("Failed to load questions:", error);
+                    alert('抱歉，載入題目時發生錯誤，請稍後再試。');
+                } finally {
+                    hideLoader();
+                }
+            };
+
+            const handleSubmit = async () => {
+                showLoader('正在為您分析報告...');
+                clearProgress();
+
+                try {
+                    // Send answers to backend for calculation
+                    const response = await fetch('/.netlify/functions/quiz?action=calculateResult', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ answers })
+                    });
+
+                    if (!response.ok) throw new Error('伺服器計算結果失敗');
+
+                    resultReport = await response.json();
+                    saveResult(resultReport);
+                    
+                    switchPage('result-page');
+                    renderResult();
+                    
+                    // Optional: Save to Firebase
+                    if (user && db) {
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        const userId = user.uid || crypto.randomUUID();
+                        const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
+                        await window.firebase.setDoc(userRef, {
+                            mbtiType: resultReport.mbtiType,
+                            type_name: resultReport.type_name,
+                            timestamp: new Date().toISOString(),
+                        });
+                    }
+
+                } catch (error) {
+                    console.error("Failed to submit and get result:", error);
+                    alert('抱歉，提交答案時發生錯誤，請稍後再試。');
+                } finally {
+                    hideLoader();
+                }
+            };
+            
+            const handleGeneratePoster = async () => {
+                // ... (This function remains the same as your original)
+                const posterTemplate = document.getElementById('share-poster-template');
+                const report = resultReport;
+                posterTemplate.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-indigo-600 to-purple-700 p-8 flex flex-col text-white relative overflow-hidden"><div class="absolute -top-10 -right-10 w-48 h-48 bg-white/10 rounded-full"></div><div class="absolute bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full"></div><div class="text-center z-10"><p class="text-lg font-light">我的房仲人格是</p><h2 class="text-4xl font-extrabold my-2">${report.mbtiType}</h2><h3 class="text-2xl font-bold bg-white/20 px-4 py-1 rounded-full inline-block">${report.type_name.split(' - ')[0]}</h3><p class="text-xl font-semibold mt-4 italic">"${report.catch_phrase}"</p></div><div class="flex-grow my-4 z-10"><canvas id="poster-radar-chart"></canvas></div><div class="text-center z-10"><p class="text-sm">測測你的房仲超能力！</p><p class="text-xs mt-2">by 桃園房仲專業顧問培智</p></div></div>`;
+                const posterCtx = document.getElementById('poster-radar-chart').getContext('2d');
+                const posterAfterDatasetsDrawPlugin = { id: 'posterAfterDatasetsDrawPlugin', afterDatasetsDraw: (chart) => { const { ctx } = chart; ctx.save(); const meta = chart.getDatasetMeta(0); meta.data.forEach((element, index) => { const dataString = chart.data.datasets[0].data[index].toString(); const { x, y } = element; ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; const angle = element.angle; const xOffset = Math.sin(angle) * 15; const yOffset = -Math.cos(angle) * 15; ctx.fillText(dataString, x + xOffset, y + yOffset); }); ctx.restore(); } };
+                new Chart(posterCtx, { type: 'radar', data: { labels: Object.keys(report.superpowerScores), datasets: [{ label: '房仲超能力', data: Object.values(report.superpowerScores), fill: true, backgroundColor: 'rgba(255, 255, 255, 0.3)', borderColor: 'rgb(255, 255, 255)', pointBackgroundColor: 'rgb(255, 255, 255)', pointBorderColor: '#fff', }] }, options: { scales: { r: { min: 0, max: 10, angleLines: { color: 'rgba(255, 255, 255, 0.3)' }, grid: { color: 'rgba(255, 255, 255, 0.3)' }, pointLabels: { font: { size: 12, weight: 'bold' }, color: '#fff' }, ticks: { display: true, stepSize: 2, backdropColor: 'rgba(0,0,0,0)', color: 'rgba(255, 255, 255, 0.7)' } } }, plugins: { legend: { display: false }, tooltip: { enabled: false } } }, plugins: [posterAfterDatasetsDrawPlugin] });
+                setTimeout(async () => { try { const canvas = await html2canvas(posterTemplate, { useCORS: true }); const imageUrl = canvas.toDataURL('image/png'); posterImageContainer.innerHTML = `<img src="${imageUrl}" alt="分享海報" class="w-full h-auto">`; downloadPosterBtn.href = imageUrl; posterModal.style.display = 'flex'; } catch (error) { console.error('海報生成失敗:', error); posterImageContainer.innerHTML = `<p class="text-red-500">抱歉，海報生成失敗，請稍後再試。</p>`; posterModal.style.display = 'flex'; } }, 500);
+            };
+
+            const handleCopyShareText = () => {
+                // ... (This function remains the same as your original)
+                const report = resultReport;
+                const shareText = `我在「房仲16型人格測驗」中測出的結果是【${report.type_name}】！${report.partner_info.text}！你也來測測看，發掘你在房仲業的超能力吧！ ${window.location.href}`;
+                const textArea = document.createElement("textarea");
+                textArea.style.position = 'fixed'; textArea.style.top = '-9999px'; textArea.style.left = '-9999px';
+                textArea.value = shareText;
+                document.body.appendChild(textArea);
+                textArea.focus(); textArea.select();
+                try {
+                    document.execCommand('copy');
+                    const copyBtn = document.getElementById('copy-share-btn');
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 mr-2"></i> 文案已複製！`;
+                    lucide.createIcons();
+                    setTimeout(() => { copyBtn.innerHTML = originalText; lucide.createIcons(); }, 2500);
+                } catch (err) { console.error('無法複製文字: ', err); } finally { document.body.removeChild(textArea); }
+            };
+
+            const handleGeminiAnalysis = async () => {
+                isGeminiLoading = true;
+                geminiAnalysis = '';
+                document.getElementById('gemini-section').innerHTML = renderGeminiSection();
+                lucide.createIcons();
+
+                const report = resultReport;
+                const prompt = `你是一位資深的房仲職涯教練，語氣專業、誠懇且充滿鼓勵。一位新人剛剛完成了16型人格測驗，這是他的結果報告：\n- MBTI 類型: ${report.mbtiType}\n- 房仲人格標籤: ${report.type_name}\n- 優勢與潛力: ${report.strengthsText}\n- 潛在弱點與挑戰: ${report.weaknesses}\n- 建議的開發策略: ${report.client_strategy}\n- 建議的銷售策略: ${report.negotiation_strategy}\n- 建議的團隊協作方式: ${report.teamwork_suggestion}\n### 房仲超能力雷達圖分數 (滿分10分)\n- 開發力: ${report.superpowerScores['開發力']}\n- 談判力: ${report.superpowerScores['談判力']}\n- 服務力: ${report.superpowerScores['服務力']}\n- 分析力: ${report.superpowerScores['分析力']}\n- 抗壓力: ${report.superpowerScores['抗壓力']}\n\n基於以上所有報告，請為這位新人撰寫一份詳細、充滿鼓勵且具體的5年職涯發展計畫。請用繁體中文回答，並包含以下幾個部分，用 markdown 格式化，標題請用 '###'：\n1.  **### 總體職涯定位與心態建議**: 根據他的性格，給予一個整體的職涯定位和成功心法。\n2.  **### 短期目標 (第1年)**: 列出3個具體的、可執行的目標，幫助他快速上手並建立信心。\n3.  **### 中期目標 (第2-3年)**: 提出2-3個進階目標，幫助他深化專業並建立個人品牌。\n4.  **### 長期目標 (第4-5年)**: 描繪一個長遠的發展藍圖，例如成為頂尖業務、團隊領導或特定領域的專家。\n5.  **### ✨ 你的專屬創意行銷點子 ✨**: 提供一個最符合他性格特質、與眾不同的創意行銷點子。\n6.  **### 🚀 房仲超能力分析與提升建議**: 根據雷達圖分數，首先讚揚分數最高的1-2項能力，並說明這對他的職涯有何幫助。接著，找出分數最低的2項能力，用鼓勵的語氣，為這兩項能力各提供一個具體的、可立即執行的練習方法或學習建議，幫助他補強弱項。`;
+                 
+                try {
+                    const response = await fetch('/.netlify/functions/gemini', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: prompt })
+                    });
+
+                    if (!response.ok) {
+                         const errorResult = await response.json();
+                         throw new Error(errorResult.error.message || 'API request failed');
+                    }
+                    
+                    const result = await response.json();
+                    geminiAnalysis = result.text;
+                } catch (error) {
+                    console.error("Gemini analysis failed:", error);
+                    geminiAnalysis = `抱歉，無法連接至 AI 分析服務：${error.message}`;
+                } finally {
+                    isGeminiLoading = false;
+                    document.getElementById('gemini-section').innerHTML = renderGeminiSection();
+                    lucide.createIcons();
+                }
+            };
+
+            const handleRetake = () => {
+                currentPage = 'intro';
+                answers = {};
+                currentQuestionIndex = 0;
+                geminiAnalysis = '';
+                isGeminiLoading = false;
+                resultReport = {};
+                questions = []; // Clear questions
+                submitBtn.textContent = '完成測驗';
+                submitBtn.disabled = false;
+                clearProgress();
+                clearResult();
+                switchPage('intro-page');
+            };
+
+            // --- INITIALIZATION ---
+            
+            const setupFirebase = async () => {
+                try {
+                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                    if (Object.keys(firebaseConfig).length === 0) return;
+                    const app = window.firebase.initializeApp(firebaseConfig);
+                    auth = window.firebase.getAuth(app);
+                    db = window.firebase.getFirestore(app);
+                    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (initialAuthToken) {
+                        await window.firebase.signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await window.firebase.signInAnonymously(auth);
+                    }
+                    window.firebase.onAuthStateChanged(auth, (currentUser) => {
+                        if (currentUser) user = currentUser;
+                    });
+                } catch (error) {
+                    console.error("Firebase initialization failed:", error);
+                }
+            };
+            
+            startQuizBtn.addEventListener('click', handleStartQuiz);
+            nextBtn.addEventListener('click', handleNext);
+            prevBtn.addEventListener('click', handlePrevious);
+            submitBtn.addEventListener('click', handleSubmit);
+            retakeBtn.addEventListener('click', handleRetake);
+            resumeBtn.addEventListener('click', () => { resumeModal.style.display = 'none'; handleStartQuiz().then(loadProgress); });
+            startNewBtn.addEventListener('click', () => { resumeModal.style.display = 'none'; clearProgress(); answers = {}; currentQuestionIndex = 0; });
+            closePosterModalBtn.addEventListener('click', () => { posterModal.style.display = 'none'; });
+            
+            lucide.createIcons();
+            setupFirebase();
+            initializeQuiz();
+        });
+    </script>
+</body>
+</html>
