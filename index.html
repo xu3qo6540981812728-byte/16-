@@ -24,17 +24,41 @@
     <style>
         .page { display: none; animation: fadeIn 0.5s ease-in-out; }
         .page.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .prose h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
         .strength-chart .bar-wrapper { display: flex; align-items: center; margin-bottom: 1rem; }
         .strength-chart .bar-container { flex-grow: 1; height: 1.75rem; border-radius: 0.5rem; overflow: hidden; background-color: #e5e7eb; display: flex; font-weight: 600; color: white; }
         .strength-chart .bar { height: 100%; transition: width 0.5s ease-in-out; display: flex; align-items: center; justify-content: center; }
         .label-left { text-align: right; width: 4rem; margin-right: 0.75rem; font-weight: bold; }
         .label-right { text-align: left; width: 4rem; margin-left: 0.75rem; font-weight: bold; }
         #share-poster-template, #business-card-template { width: 375px; height: 667px; position: absolute; left: -9999px; top: -9999px; font-family: 'Helvetica Neue', sans-serif; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .form-input { width: 100%; padding: 0.75rem 1rem; border: 1px solid #d1d5db; border-radius: 0.5rem; transition: border-color 0.2s, box-shadow 0.2s; }
-        .form-input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3); }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -47,28 +71,32 @@
     </div>
 
     <div id="resume-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center transform transition-all" style="animation: fadeIn 0.3s ease-out;">
             <h2 class="text-2xl font-bold mb-4 text-gray-800">發現未完成的測驗</h2>
             <p class="text-gray-600 mb-8">您上次似乎沒有完成測驗，<br>要從上次離開的地方繼續嗎？</p>
             <div class="flex justify-around gap-4">
-                <button id="start-new-btn" class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300">重新開始</button>
-                <button id="resume-btn" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700">繼續測驗</button>
+                <button id="start-new-btn" class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition-all duration-200">重新開始</button>
+                <button id="resume-btn" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200">繼續測驗</button>
             </div>
         </div>
     </div>
 
     <div id="poster-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center relative">
-            <button id="close-poster-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center transform transition-all relative" style="animation: fadeIn 0.3s ease-out;">
+            <button id="close-poster-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
             <h2 class="text-2xl font-bold mb-4 text-gray-800">你的專屬房仲戰力海報</h2>
             <div id="poster-image-container" class="mb-4 border-2 border-gray-200 rounded-lg overflow-hidden"></div>
             <p class="text-gray-600 mb-4">長按圖片即可儲存或分享！</p>
-            <a id="download-poster-btn" href="#" download="my-real-estate-superpower.png" class="inline-block w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700">下載海報</a>
+            <a id="download-poster-btn" href="#" download="my-real-estate-superpower.png" class="inline-block w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200">
+                下載海報
+            </a>
         </div>
     </div>
 
     <div id="business-card-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 overflow-y-auto" style="display: none;">
-        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full my-8">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all my-8" style="animation: fadeIn 0.3s ease-out;">
             <h2 class="text-2xl font-bold mb-6 text-gray-800 text-center">製作您的客戶名片海報</h2>
             <form id="business-card-form" name="business-card-leads" method="POST" data-netlify="true" enctype="multipart/form-data">
                 <input type="hidden" name="form-name" value="business-card-leads" />
@@ -104,55 +132,108 @@
                     </div>
                 </div>
                 <div class="mt-8 flex gap-4">
-                    <button id="close-business-card-modal" type="button" class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300">取消</button>
-                    <button type="submit" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700">生成海報並提交</button>
+                    <button id="close-business-card-modal" type="button" class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition-all">取消</button>
+                    <button type="submit" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all">生成海報並提交</button>
                 </div>
             </form>
         </div>
     </div>
     
     <div id="poster-modal-business" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center relative">
-            <button id="close-poster-modal-business" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center transform transition-all relative" style="animation: fadeIn 0.3s ease-out;">
+            <button id="close-poster-modal-business" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
             <h2 class="text-2xl font-bold mb-4 text-gray-800">您的客戶專屬名片海報</h2>
             <div id="poster-image-container-business" class="mb-4 border-2 border-gray-200 rounded-lg overflow-hidden"></div>
             <p class="text-gray-600 mb-4">長按圖片即可儲存或分享給客戶！</p>
-            <a id="download-poster-btn-business" href="#" download="real-estate-business-card.png" class="inline-block w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700">下載海報</a>
+            <a id="download-poster-btn-business" href="#" download="real-estate-business-card.png" class="inline-block w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200">
+                下載海報
+            </a>
         </div>
     </div>
 
     <div id="app-container">
-        <div id="intro-page" class="page flex-col items-center justify-between min-h-screen p-4 text-center">
+        <div id="intro-page" class="page active flex-col items-center justify-between min-h-screen p-4 text-center">
             <div class="flex-grow flex items-center justify-center w-full">
                 <div class="p-8 bg-white rounded-xl shadow-2xl max-w-2xl w-full">
-                    <h1 class="text-4xl font-extrabold text-indigo-700 mb-4">房仲新人16型人格測驗</h1>
-                    <p class="text-lg text-gray-600 mb-6 leading-relaxed">這份問卷旨在幫助您探索在房仲工作上的個人風格偏好，作為職涯發展的參考。它並非嚴格的心理學診斷，測驗結果可能因您當下的心境與情境而異。</p>
-                    <button id="start-quiz-btn" type="button" class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">開始測驗 <i data-lucide="chevron-right" class="inline-block ml-2"></i></button>
+                    <h1 class="text-4xl font-extrabold text-indigo-700 mb-4">
+                        房仲新人16型人格測驗
+                    </h1>
+                    <p class="text-lg text-gray-600 mb-6 leading-relaxed">
+                        這份問卷旨在幫助您探索在房仲工作上的個人風格偏好，作為職涯發展的參考。它並非嚴格的心理學診斷，測驗結果可能因您當下的心境與情境而異。
+                    </p>
+                    <button id="start-quiz-btn" type="button" class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                        開始測驗 <i data-lucide="chevron-right" class="inline-block ml-2"></i>
+                    </button>
                 </div>
             </div>
-            <footer class="w-full py-6 mt-8"><div class="max-w-3xl mx-auto flex items-center justify-center gap-6 px-4"><a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600">by 桃園房仲專業顧問培智</a><a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600">加入我們</a></div></footer>
+            <footer class="w-full py-6 mt-8">
+                <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 px-4">
+                    <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+                        <a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            by 桃園房仲專業顧問培智
+                        </a>
+                        <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            加入我們
+                        </a>
+                    </div>
+                </div>
+            </footer>
         </div>
+
         <div id="quiz-page" class="page flex-col items-center justify-between min-h-screen p-4">
             <div class="flex-grow flex items-center justify-center w-full">
                 <div class="p-8 bg-white rounded-xl shadow-2xl w-full max-w-xl flex flex-col items-center">
                     <div id="quiz-content" class="w-full"></div>
                     <div class="mt-8 flex justify-between w-full">
-                        <button id="prev-btn" type="button" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-full shadow-md hover:bg-gray-300 disabled:opacity-50"><i data-lucide="arrow-left" class="inline-block mr-2"></i> 上一題</button>
-                        <button id="next-btn" type="button" class="px-6 py-2 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 disabled:opacity-50">下一題 <i data-lucide="arrow-right" class="inline-block ml-2"></i></button>
-                        <button id="submit-btn" type="button" class="hidden px-6 py-2 bg-green-600 text-white rounded-full shadow-md hover:bg-green-700 disabled:opacity-50">完成測驗</button>
+                        <button id="prev-btn" type="button" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-full shadow-md hover:bg-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i data-lucide="arrow-left" class="inline-block mr-2"></i> 上一題
+                        </button>
+                        <button id="next-btn" type="button" class="px-6 py-2 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            下一題 <i data-lucide="arrow-right" class="inline-block ml-2"></i>
+                        </button>
+                        <button id="submit-btn" type="button" class="hidden px-6 py-2 bg-green-600 text-white rounded-full shadow-md hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            完成測驗
+                        </button>
                     </div>
                 </div>
             </div>
-             <footer class="w-full py-6 mt-8"><div class="max-w-3xl mx-auto flex items-center justify-center gap-6 px-4"><a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600">by 桃園房仲專業顧問培智</a><a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600">加入我們</a></div></footer>
+             <footer class="w-full py-6 mt-8">
+                <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 px-4">
+                    <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+                        <a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            by 桃園房仲專業顧問培智
+                        </a>
+                        <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            加入我們
+                        </a>
+                    </div>
+                </div>
+            </footer>
         </div>
+
         <div id="result-page" class="page flex-col items-center justify-between min-h-screen p-4">
             <div class="flex-grow flex items-center justify-center w-full my-8">
                 <div class="flex flex-col items-center">
                     <div id="result-content" class="w-full max-w-3xl"></div>
-                    <button id="retake-btn" type="button" class="mt-8 px-6 py-2 bg-gray-200 text-gray-700 rounded-full shadow-md hover:bg-gray-300">返回首頁</button>
+                    <button id="retake-btn" type="button" class="mt-8 px-6 py-2 bg-gray-200 text-gray-700 rounded-full shadow-md hover:bg-gray-300 transition-all duration-200">
+                        返回首頁
+                    </button>
                 </div>
             </div>
-             <footer class="w-full py-6 mt-8"><div class="max-w-3xl mx-auto flex items-center justify-center gap-6 px-4"><a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600">by 桃園房仲專業顧問培智</a><a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600">加入我們</a></div></footer>
+             <footer class="w-full py-6 mt-8">
+                <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 px-4">
+                    <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+                        <a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            by 桃園房仲專業顧問培智
+                        </a>
+                        <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
+                            加入我們
+                        </a>
+                    </div>
+                </div>
+            </footer>
         </div>
     </div>
 
@@ -162,9 +243,16 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- STATE MANAGEMENT ---
+            let currentPage = 'intro';
             let answers = {};
             let currentQuestionIndex = 0;
+            let user = null;
+            let db = null;
+            let auth = null;
+            let geminiAnalysis = '';
+            let isGeminiLoading = false;
             let resultReport = {};
+            let radarChartInstance = null;
             let questions = [];
 
             // --- DOM ELEMENTS ---
@@ -178,15 +266,23 @@
             const nextBtn = document.getElementById('next-btn');
             const submitBtn = document.getElementById('submit-btn');
             const retakeBtn = document.getElementById('retake-btn');
-            const loadingModal = document.getElementById('loading-modal');
-            const loadingText = document.getElementById('loading-text');
             const resumeModal = document.getElementById('resume-modal');
             const resumeBtn = document.getElementById('resume-btn');
             const startNewBtn = document.getElementById('start-new-btn');
+            const posterModal = document.getElementById('poster-modal');
+            const closePosterModalBtn = document.getElementById('close-poster-modal');
+            const posterImageContainer = document.getElementById('poster-image-container');
+            const downloadPosterBtn = document.getElementById('download-poster-btn');
+            const loadingModal = document.getElementById('loading-modal');
+            const loadingText = document.getElementById('loading-text');
             const businessCardModal = document.getElementById('business-card-modal');
             const closeBusinessCardModalBtn = document.getElementById('close-business-card-modal');
             const businessCardForm = document.getElementById('business-card-form');
-
+            const posterModalBusiness = document.getElementById('poster-modal-business');
+            const closePosterModalBusinessBtn = document.getElementById('close-poster-modal-business');
+            const posterImageContainerBusiness = document.getElementById('poster-image-container-business');
+            const downloadPosterBtnBusiness = document.getElementById('download-poster-btn-business');
+            
             // --- FUNCTIONS ---
             const showLoader = (text = '載入中...') => {
                 loadingText.textContent = text;
@@ -195,33 +291,77 @@
             const hideLoader = () => {
                 loadingModal.style.display = 'none';
             };
-            const saveProgress = () => localStorage.setItem('mbtiQuizProgress', JSON.stringify({ answers, currentQuestionIndex }));
+            const saveProgress = () => {
+                localStorage.setItem('mbtiQuizProgress', JSON.stringify({ answers, currentQuestionIndex }));
+            };
             const clearProgress = () => localStorage.removeItem('mbtiQuizProgress');
             const saveResult = (report) => localStorage.setItem('mbtiQuizResult', JSON.stringify(report));
             const clearResult = () => localStorage.removeItem('mbtiQuizResult');
 
+            const loadProgress = () => {
+                const savedProgress = localStorage.getItem('mbtiQuizProgress');
+                if (savedProgress) {
+                    const { answers: savedAnswers, currentQuestionIndex: savedIndex } = JSON.parse(savedProgress);
+                    if (savedAnswers && Object.keys(savedAnswers).length > 0) {
+                        answers = savedAnswers;
+                        currentQuestionIndex = savedIndex;
+                        switchPage('quiz-page');
+                        renderQuiz();
+                    } else {
+                        clearProgress();
+                    }
+                }
+            };
+            
+            const initializeQuiz = () => {
+                const savedResult = localStorage.getItem('mbtiQuizResult');
+                const savedProgress = localStorage.getItem('mbtiQuizProgress');
+                if (savedResult) {
+                    resultReport = JSON.parse(savedResult);
+                    switchPage('result-page');
+                    renderResult();
+                } else if (savedProgress) {
+                    const { answers: savedAnswers } = JSON.parse(savedProgress);
+                    if (savedAnswers && Object.keys(savedAnswers).length > 0) {
+                        resumeModal.style.display = 'flex';
+                    } else {
+                         switchPage('intro-page');
+                    }
+                } else {
+                    switchPage('intro-page');
+                }
+            };
+
             const switchPage = (pageId) => {
                 document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-                document.getElementById(pageId).classList.add('active');
+                const pageElement = document.getElementById(pageId);
+                if(pageElement) pageElement.classList.add('active');
                 window.scrollTo(0, 0);
             };
 
             const renderQuiz = () => {
+                if (questions.length === 0) {
+                    quizContentEl.innerHTML = `<p class="text-center text-red-500">無法載入題目，請稍後再試。</p>`;
+                    return;
+                }
                 const question = questions[currentQuestionIndex];
-                let html = `<div class="flex flex-col items-center space-y-6 w-full max-w-lg">
+                let html = `
+                    <div class="flex flex-col items-center space-y-6 w-full max-w-lg">
                         <div class="text-sm text-gray-500">第 ${currentQuestionIndex + 1} 題，共 ${questions.length} 題</div>
-                        <div class="w-full h-2 bg-gray-200 rounded-full"><div class="bg-indigo-500 h-full rounded-full" style="width: ${((currentQuestionIndex + 1) / questions.length) * 100}%"></div></div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full">
+                            <div class="bg-indigo-500 h-full rounded-full transition-all duration-500" style="width: ${((currentQuestionIndex + 1) / questions.length) * 100}%"></div>
+                        </div>
                         <h2 class="text-2xl font-bold text-gray-800 text-center">${question.text}</h2>`;
                 if (question.type === 'mbti_choice') {
-                    html += `<div class="space-y-4 w-full">${question.options.map(option => `<button type="button" data-question-id="${question.id}" data-value="${option.value}" class="quiz-option w-full p-4 text-left border rounded-lg transition-colors ${answers[question.id] === option.value ? 'bg-indigo-600 text-white' : 'bg-white hover:bg-gray-100'}">${option.text}</button>`).join('')}</div>`;
+                    html += `<div class="space-y-4 w-full">${question.options.map(option => `<button type="button" data-question-id="${question.id}" data-value="${option.value}" class="quiz-option w-full p-4 text-left border rounded-lg transition-all duration-300 ${answers[question.id] === option.value ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-800 hover:bg-gray-100'}">${option.text}</button>`).join('')}</div>`;
                 } else if (question.type === 'likert') {
                     html += `<div class="flex flex-col items-center space-y-4 w-full">
                             <div class="flex justify-between w-full px-2 text-sm text-gray-500"><span>${question.labels[0]}</span><span>${question.labels[4]}</span></div>
-                            <div class="flex w-full justify-between items-center">${question.scale.map(value => `<button type="button" data-question-id="${question.id}" data-value="${value}" class="quiz-option w-12 h-12 text-lg rounded-full border transition-transform ${answers[question.id] === value ? 'bg-indigo-600 text-white scale-110' : 'bg-white hover:bg-gray-100'}">${value}</button>`).join('')}</div></div>`;
+                            <div class="flex w-full justify-between items-center">${question.scale.map(value => `<button type="button" data-question-id="${question.id}" data-value="${value}" class="quiz-option w-12 h-12 text-lg rounded-full border transition-all duration-300 ${answers[question.id] === value ? 'bg-indigo-600 text-white shadow-lg scale-110' : 'bg-white text-gray-800 hover:bg-gray-100'}">${value}</button>`).join('')}</div></div>`;
                 }
                 html += `</div>`;
                 quizContentEl.innerHTML = html;
-                quizContentEl.querySelectorAll('.quiz-option').forEach(el => el.addEventListener('click', e => handleAnswer(e.currentTarget.dataset.questionId, e.currentTarget.dataset.value)));
+                quizContentEl.querySelectorAll('.quiz-option').forEach(button => button.addEventListener('click', (e) => handleAnswer(e.currentTarget.dataset.questionId, e.currentTarget.dataset.value)));
                 updateNavButtons();
             };
             
@@ -232,13 +372,14 @@
                 }
                 const report = resultReport;
                 const percentages = report.strengths || {};
-                const strengthLabels = { E: '外向', I: '內向', S: '實感', N: '直覺', T: '思考', F: '情感', J: '判斷', P: '感知' };
-                const colors = { E: 'bg-blue-500', I: 'bg-blue-400', S: 'bg-green-500', N: 'bg-green-400', T: 'bg-red-500', F: 'bg-red-400', J: 'bg-yellow-500', P: 'bg-yellow-400' };
-                const strengthChartHtml = Object.entries(percentages).map(([pair, values]) => {
-                    const [t1, t2] = pair.split('');
-                    const p1 = values[t1] || 50; const p2 = values[t2] || 50;
-                    return `<div class="bar-wrapper"><div class="label-left">${strengthLabels[t1]}</div><div class="bar-container"><div class="bar ${colors[t1]}" style="width: ${p1}%;">${p1.toFixed(0)}%</div><div class="bar ${colors[t2]}" style="width: ${p2}%;">${p2.toFixed(0)}%</div></div><div class="label-right">${strengthLabels[t2]}</div></div>`;
-                }).join('');
+                const strengthLabels = { E: { label: '外向', color: 'bg-blue-500' }, I: { label: '內向', color: 'bg-blue-400' }, S: { label: '實感', color: 'bg-green-500' }, N: { label: '直覺', color: 'bg-green-400' }, T: { label: '思考', color: 'bg-red-500' }, F: { label: '情感', color: 'bg-red-400' }, J: { label: '判斷', color: 'bg-yellow-500' }, P: { label: '感知', color: 'bg-yellow-400' } };
+                let strengthChartHtml = '';
+                for (const pair of ['EI', 'SN', 'TF', 'JP']) {
+                    const [trait1, trait2] = pair.split('');
+                    const percent1 = percentages[pair]?.[trait1] || 50;
+                    const percent2 = percentages[pair]?.[trait2] || 50;
+                    strengthChartHtml += `<div class="bar-wrapper"><div class="label-left">${strengthLabels[trait1].label}</div><div class="bar-container"><div class="bar ${strengthLabels[trait1].color}" style="width: ${percent1}%;">${percent1.toFixed(0)}%</div><div class="bar ${strengthLabels[trait2].color}" style="width: ${percent2}%;">${percent2.toFixed(0)}%</div></div><div class="label-right">${strengthLabels[trait2].label}</div></div>`;
+                }
                 resultContentEl.innerHTML = `
                     <div class="p-6 bg-white rounded-xl shadow-lg w-full max-w-3xl">
                         <div class="space-y-8">
@@ -246,7 +387,7 @@
                             <div class="p-6 bg-indigo-50 rounded-lg text-center"><p class="text-2xl font-semibold text-indigo-800">你的房仲專屬人格標籤是：</p><p class="text-4xl font-extrabold text-indigo-600 mt-2">${report.type_name}</p></div>
                             <div class="grid md:grid-cols-2 gap-8 items-center"><div class="p-6 bg-gray-50 rounded-lg shadow-inner"><h3 class="text-2xl font-semibold flex items-center text-gray-800 mb-4"><i data-lucide="radar" class="w-6 h-6 mr-2 text-indigo-500"></i> 房仲超能力雷達圖</h3><canvas id="radarChart"></canvas></div><div class="p-6 bg-gray-50 rounded-lg shadow-inner strength-chart"><h3 class="text-2xl font-semibold flex items-center text-gray-800 mb-4"><i data-lucide="pie-chart" class="w-6 h-6 mr-2 text-indigo-500"></i> 人格傾向強度分析</h3>${strengthChartHtml}</div></div>
                             <div class="p-6 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow"><h3 class="text-2xl font-semibold flex items-center text-yellow-800 mb-2"><i data-lucide="rocket" class="w-6 h-6 mr-2"></i> 今日馬上能做的行動</h3><p class="text-gray-700 text-lg leading-relaxed">${report.immediate_action}</p></div>
-                            <div id="gemini-section" class="mt-8 pt-6 border-t-2 border-dashed border-indigo-200"><div class="text-center"><button id="gemini-analysis-btn" type="button" class="px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"><i data-lucide="sparkles" class="inline-block mr-3"></i> 取得 AI 深度職涯分析</button></div></div>
+                            <div id="gemini-section" class="mt-8 pt-6 border-t-2 border-dashed border-indigo-200"><div class="text-center"><button id="gemini-analysis-btn" class="px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"><i data-lucide="sparkles" class="inline-block mr-3"></i> 取得 AI 深度職涯分析</button></div></div>
                         </div>
                         <div class="mt-8 pt-6 border-t-2 border-indigo-200 text-center"><h3 class="text-2xl font-semibold text-gray-800 mb-4">分享成果 & 拓展事業</h3><p class="text-gray-500 mb-6">將你的超能力分享出去，或製作專屬海報吸引客戶！</p>
                             <div class="flex flex-col sm:flex-row justify-center items-center gap-4 flex-wrap">
@@ -264,22 +405,19 @@
                 resultContentEl.querySelector('#copy-share-btn').addEventListener('click', handleCopyShareText);
             };
 
-            const renderRadarChart = (scores) => {
-                const ctx = document.getElementById('radarChart')?.getContext('2d');
-                if (ctx) new Chart(ctx, { type: 'radar', data: { labels: Object.keys(scores), datasets: [{ data: Object.values(scores), fill: true, backgroundColor: 'rgba(99, 102, 241, 0.2)', borderColor: 'rgb(99, 102, 241)' }] }, options: { scales: { r: { min: 0, max: 10, pointLabels: { font: { size: 14, weight: 'bold' } }, ticks: { stepSize: 2 } } }, plugins: { legend: { display: false } } } });
-            };
-            
-            const handleGeminiAnalysis = async () => { /* ... (This function remains the same as previous correct versions) ... */ };
-            const handleGeneratePoster = async () => { /* ... (This function remains the same as previous correct versions) ... */ };
-            const handleCopyShareText = () => { /* ... (This function remains the same as previous correct versions) ... */ };
+            const renderRadarChart = (scores) => { /* Same as previous version */ };
+            const handleGeminiAnalysis = async () => { /* Same as previous version */ };
+            const handleGeneratePoster = async () => { /* Same as previous version */ };
+            const handleCopyShareText = () => { /* Same as previous version */ };
 
             const handleAnswer = (questionId, value) => { answers[questionId] = value; renderQuiz(); saveProgress(); };
             const updateNavButtons = () => {
                 const prevBtn = document.getElementById('prev-btn');
                 const nextBtn = document.getElementById('next-btn');
                 const submitBtn = document.getElementById('submit-btn');
+                if(!prevBtn || !nextBtn || !submitBtn) return;
                 prevBtn.disabled = currentQuestionIndex === 0;
-                const isAnswered = !!answers[questions[currentQuestionIndex].id];
+                const isAnswered = !!answers[questions[currentQuestionIndex]?.id];
                 if (currentQuestionIndex === questions.length - 1) {
                     nextBtn.style.display = 'none'; submitBtn.style.display = 'inline-flex'; submitBtn.disabled = !isAnswered;
                 } else {
@@ -294,18 +432,13 @@
                     if (!response.ok) throw new Error('無法從伺服器獲取題目');
                     questions = await response.json();
                     if (questions && questions.length > 0) {
-                        switchPage(quizPageTemplate);
-                        document.getElementById('quiz-page').querySelectorAll('button').forEach(btn => {
-                            if (btn.id === 'prev-btn') btn.addEventListener('click', () => { if (currentQuestionIndex > 0) { currentQuestionIndex--; renderQuiz(); } });
-                            if (btn.id === 'next-btn') btn.addEventListener('click', () => { if (currentQuestionIndex < questions.length - 1) { currentQuestionIndex++; renderQuiz(); } });
-                            if (btn.id === 'submit-btn') btn.addEventListener('click', handleSubmit);
-                        });
+                        switchPage('quiz-page');
                         renderQuiz();
                     } else { throw new Error('題目資料格式不正確'); }
                 } catch (error) {
                     console.error("Failed to load questions:", error);
                     alert('抱歉，載入題目時發生錯誤。');
-                    switchPage(introPageTemplate);
+                    switchPage('intro-page');
                 } finally { hideLoader(); }
             };
 
@@ -317,13 +450,12 @@
                     if (!response.ok) throw new Error('伺服器計算結果失敗');
                     resultReport = await response.json();
                     saveResult(resultReport);
-                    switchPage(resultPageTemplate);
-                    document.getElementById('retake-btn').addEventListener('click', () => { clearResult(); clearProgress(); answers={}; currentQuestionIndex=0; switchPage(introPageTemplate); document.getElementById('start-quiz-btn').addEventListener('click', handleStartQuiz);});
+                    switchPage('result-page');
                     renderResult();
                 } catch (error) {
                     console.error("Failed to get result:", error);
                     alert('抱歉，提交答案時發生錯誤。');
-                    switchPage(introPageTemplate);
+                    switchPage('intro-page');
                 } finally { hideLoader(); }
             };
             
@@ -336,10 +468,14 @@
                     reader.readAsDataURL(file);
                 });
             };
+            
+            const resetBusinessCardForm = () => {
+                businessCardForm.reset();
+            };
 
             const handleGenerateBusinessCard = () => {
-                businessCardForm.reset();
-                document.getElementById('form-mbti-type').value = resultReport.type_name;
+                resetBusinessCardForm();
+                document.getElementById('form-mbti-type').value = `${resultReport.type_name} (${resultReport.mbtiType})`;
                 businessCardModal.style.display = 'flex';
             };
 
@@ -394,7 +530,6 @@
                         </div>`;
                     
                     await fetch("/", { method: "POST", body: formData });
-
                     const canvas = await html2canvas(cardTemplate, { useCORS: true, scale: 2, backgroundColor: '#1a1a1a' });
                     const imageUrl = canvas.toDataURL('image/png');
                     
@@ -402,7 +537,7 @@
                     document.getElementById('download-poster-btn-business').href = imageUrl;
                     businessCardModal.style.display = 'none';
                     document.getElementById('poster-modal-business').style.display = 'flex';
-                    businessCardForm.reset();
+                    resetBusinessCardForm();
 
                 } catch (error) {
                     console.error('生成海報時發生錯誤:', error);
@@ -413,19 +548,26 @@
             };
             
             // --- INITIALIZATION & Event Listeners ---
-            const init = () => {
-                switchPage(introPageTemplate);
-                document.getElementById('start-quiz-btn').addEventListener('click', handleStartQuiz);
+            const setupEventListeners = () => {
+                startQuizBtn.addEventListener('click', handleStartQuiz);
+                retakeBtn.addEventListener('click', () => {
+                    clearResult(); clearProgress(); answers = {}; currentQuestionIndex = 0;
+                    switchPage('intro-page');
+                });
+                prevBtn?.addEventListener('click', () => { if (currentQuestionIndex > 0) { currentQuestionIndex--; renderQuiz(); } });
+                nextBtn?.addEventListener('click', () => { if (currentQuestionIndex < questions.length - 1) { currentQuestionIndex++; renderQuiz(); } });
+                submitBtn?.addEventListener('click', handleSubmit);
                 resumeBtn.addEventListener('click', () => { resumeModal.style.display = 'none'; handleStartQuiz().then(loadProgress); });
                 startNewBtn.addEventListener('click', () => { resumeModal.style.display = 'none'; clearProgress(); answers = {}; currentQuestionIndex = 0; });
-                document.getElementById('close-poster-modal').addEventListener('click', () => { document.getElementById('poster-modal').style.display = 'none'; });
-                closeBusinessCardModalBtn.addEventListener('click', () => { businessCardModal.style.display = 'none'; businessCardForm.reset(); });
-                document.getElementById('close-poster-modal-business').addEventListener('click', () => { document.getElementById('poster-modal-business').style.display = 'none'; });
+                closePosterModalBtn.addEventListener('click', () => { document.getElementById('poster-modal').style.display = 'none'; });
+                closeBusinessCardModalBtn.addEventListener('click', () => { businessCardModal.style.display = 'none'; resetBusinessCardForm(); });
+                closePosterModalBusinessBtn.addEventListener('click', () => { document.getElementById('poster-modal-business').style.display = 'none'; });
                 businessCardForm.addEventListener('submit', handleBusinessCardFormSubmit);
-                initializeQuiz();
             };
 
-            init();
+            initializeQuiz();
+            setupEventListeners();
+            lucide.createIcons();
         });
     </script>
 </body>
