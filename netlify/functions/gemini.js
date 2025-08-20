@@ -16,9 +16,9 @@ exports.handler = async (event, context) => {
             return { statusCode: 400, body: JSON.stringify({ error: { message: 'Prompt is missing from the request body.' } }) };
         }
 
-        // --- UPDATED MODEL NAME HERE ---
-        // Changed from 'gemini-pro' to the current stable model 'gemini-1.0-pro'
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${apiKey}`;
+        // --- FINAL MODEL NAME UPDATE ---
+        // Changed to the latest recommended model 'gemini-1.5-flash-latest' for better compatibility.
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
         // Construct the payload for the Gemini API
         const payload = {
