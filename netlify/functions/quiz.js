@@ -105,8 +105,6 @@ const dynamicTexts = {
 };
 
 
-// 請用此程式碼塊，完整替換您 quiz.js 中的 const mbtiData = { ... };
-// 請用此程式碼塊，完整替換您 quiz.js 中的 const mbtiData = { ... };
 const mbtiData = {
     ESTJ: { type_name: '鐵血店長型 - 總經理 (ESTJ)', catch_phrase: '效率至上，使命必達！', weaknesses: '決策時可能過度依賴邏輯和數據，較難彈性應對市場變化，或忽略客戶的情感需求。在人際溝通上可能顯得過於直接和強勢。', client_strategy: '建立系統化的客戶管理與追蹤系統，將每一次的接觸都記錄下來。以數據和事實為基礎，向客戶展示房產的投資價值和交易流程的嚴謹性。', negotiation_strategy: '專注於價格和合約條款的談判，利用市場數據證明你的出價是合理的。保持理性，不讓情緒影響決策。', teamwork_suggestion: '主動承擔領導角色，組織團隊會議，分享你的流程管理經驗。但同時，也要學習傾聽不同意見，特別是來自情感型同事的建議。', career_suggestion: '適合擔任團隊組長或店長，專注於業務流程優化和團隊管理。', suggested_skills: '學習同理心溝通、情緒管理技巧，並提升對非結構化問題的應變能力。', immediate_action: '今天就為你的團隊建立一個共享的SOP文件，將一個關鍵流程標準化。', management_suggestion: '這類新人重視結構與規則，給予他們清晰的SOP和明確的績效目標。他們是可靠的執行者，適合負責流程管理與細節確認的任務。', team_role: '你是團隊的「指揮官」和「流程建立者」。你擅長制定計畫、分配任務，並確保團隊朝著共同目標前進。與充滿創意但較隨性的 P 型人格（如 ENFP、INFP）合作時，你需要給予更多彈性；而與 F 型人格（如 ISFJ、ENFJ）合作時，則要多加留意他們的感受，而不僅僅是任務本身。', client_perspective: { main: '我是您的房仲【鐵血店長型】，做事有條理、效率極高。我會將所有交易細節都規劃得清清楚楚，是您最安心可靠的選擇。', tagline: '適合追求高效、專業服務的您。' } },
     ESTP: { type_name: '超級戰將 - 企業家 (ESTP)', catch_phrase: '機會來了，就要抓住！', weaknesses: '可能因追求刺激而缺乏長遠規劃，容易忽略細節和跟進工作，需要紀律來維持業務穩定。', client_strategy: '將你的活力與熱情帶入每一次客戶接觸。透過有趣、有創意的帶看體驗來吸引客戶，並善用你的應變能力處理突發狀況。', negotiation_strategy: '在談判中展現你的靈活與果斷，快速分析對方意圖並提出對策，享受斡旋過程中的博弈。', teamwork_suggestion: '你能在團隊中帶來能量與活力。多分享你的實戰經驗與成功案例，激勵同事。', career_suggestion: '適合擔任外勤業務員，或專注於市場拓展和快速成交。', suggested_skills: '學習制定並遵守跟進計畫，提升文書處理與合約細節的嚴謹度。', immediate_action: '今天多打 3 通陌生電話，試著練習用幽默化解尷尬。', management_suggestion: '這類新人是天生的行動派，喜歡挑戰。給他們高彈性的開發空間和即時的業績獎勵。他們可能忽略文書細節，需要有內勤或系統輔助他們處理合約流程。', team_role: '你是團隊的「先鋒部隊」和「危機處理專家」。你總能第一個衝鋒陷陣，打開新的市場或解決突發狀況。與注重計畫的 J 型人格（如 ISTJ、ENTJ）合作時，記得要多溝通你的行動方案，讓他們安心。你的臨場反應能幫助思考型的 I 型人格（如 INTP、INTJ）將理論付諸實踐。', client_perspective: { main: '我是您的房仲【超級戰將】，反應快、懂的抓住市場機會。我總能為您找到最新的好案子，並在談判中快狠準地達成目標。', tagline: '適合喜歡果斷、行動派顧問的您。' } },
@@ -141,7 +139,7 @@ const calculateResult = (answers) => {
         if (!answers[q.id]) return;
         if (q.type === 'mbti_choice') {
             const value = answers[q.id];
-            if (value) score[value] += 2; // 選項題分數權重設為2
+            if (value) score[value] += 2;
         } else if (q.type === 'likert') {
             const value = parseInt(answers[q.id], 10);
             if (value) {
@@ -151,6 +149,58 @@ const calculateResult = (answers) => {
             }
         }
     });
+
+    const mbti = (score.E >= score.I ? 'E' : 'I') +
+                 (score.S >= score.N ? 'S' : 'N') +
+                 (score.T >= score.F ? 'T' : 'F') +
+                 (score.J >= score.P ? 'J' : 'P');
+    
+    const calculatePercentages = (s1, s2) => {
+        const total = s1 + s2;
+        return total === 0 ? { p1: 50, p2: 50 } : { p1: (s1 / total) * 100, p2: (s2 / total) * 100 };
+    };
+    
+    const percentages = {
+        EI: { E: calculatePercentages(score.E, score.I).p1, I: calculatePercentages(score.E, score.I).p2 },
+        SN: { S: calculatePercentages(score.S, score.N).p1, N: calculatePercentages(score.S, score.N).p2 },
+        TF: { T: calculatePercentages(score.T, score.F).p1, F: calculatePercentages(score.T, score.F).p2 },
+        JP: { J: calculatePercentages(score.J, score.P).p1, P: calculatePercentages(score.J, score.P).p2 }
+    };
+
+    const baseData = mbtiData[mbti];
+
+    const [dim1, dim2, dim3, dim4] = mbti.split('');
+    const strengthTexts = [];
+    const getLevel = (percent) => percent >= 75 ? 'high' : 'mid';
+
+    strengthTexts.push(dynamicTexts.strengths[dim1][getLevel(percentages.EI[dim1])]);
+    strengthTexts.push(dynamicTexts.strengths[dim2][getLevel(percentages.SN[dim2])]);
+    strengthTexts.push(dynamicTexts.strengths[dim3][getLevel(percentages.TF[dim3])]);
+    strengthTexts.push(dynamicTexts.strengths[dim4][getLevel(percentages.JP[dim4])]);
+    
+    const dynamicStrengthsText = strengthTexts.join(' ');
+
+    return { 
+        mbtiType: mbti, 
+        strengths: percentages,
+        scoreDetails: score,
+        type_name: baseData.type_name,
+        strengthsText: dynamicStrengthsText,
+        weaknesses: baseData.weaknesses,
+        client_strategy: baseData.client_strategy,
+        negotiation_strategy: baseData.negotiation_strategy,
+        teamwork_suggestion: baseData.teamwork_suggestion,
+        career_suggestion: baseData.career_suggestion,
+        suggested_skills: baseData.suggested_skills,
+        immediate_action: baseData.immediate_action,
+        management_suggestion: baseData.management_suggestion,
+        superpowerScores: superpowerScores[mbti],
+        team_role: baseData.team_role,
+        catch_phrase: baseData.catch_phrase,
+        partner_info: partnerPairing[mbti],
+        client_perspective: baseData.client_perspective
+    };
+};
 
     const mbti = (score.E >= score.I ? 'E' : 'I') +
                  (score.S >= score.N ? 'S' : 'N') +
@@ -245,5 +295,6 @@ exports.handler = async (event, context) => {
         body: 'Action not found'
     };
 };
+
 
 
