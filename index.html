@@ -879,72 +879,70 @@
                         mainText = mainText.substring(0, splitIndex).trim();
                     }
                     
-                    // ===== FIX 1: Restored the working placeholder Base64 for the left QR Code =====
-                    // Please replace this with your own valid Base64 string later.
                     const quizQrCodeUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWAQMAAAAGz+OhAAAABlBMVEX///8AAABVwtN+AAABaklEQVRIie2WwW7DIAwF5/sotXROxc59C6joEDpeOHb/Q1JcEhAlGgSO/c/2GIH+wMvDAAAAAAAAAMBPbJvN5/OUfivV/lfV1fW3gO12e3/T6/W6bds2j8fjWywWb7Zt27qub5quD4IgaJpmu91uu9/v+/3+LMsyDMMwj8eDqqoLwzB+LBaLTNM0z/Oapt/v7/P5jM/zRFFEtVqtVqvVarPZPM/LsqzVar1e1zVN08/n8/V6fTCbzQZBETRN+/1+lmVZlq3X63q/3zMMf71er9frdTCbzWzbVlUVEUHrsizLMMz3+53P51mW5ePxeDgcPpfLdUEQpNFoNOv1uu/7uiz7fr/Lsuw4HD6bzWzb9oMg6PV63W633e93RVE8Ho+iKNo0zTAM3263p2mabdtVVd0gCF4ul6lWq6IoSjqdlmXZsqz7/X6/3+84jvP5fDabzdZtu65rkiRBEOTzeVVVZYqi6LquKIpE0TzPl2VZVZVE0bZt0zR5nh/P53m/3wMAAAAAAAD+2Q/7Zg850iY0YAAAAABJRU5ErkJggg==";
 
-                    // ===== MODIFICATION START v4 =====
+                    // ===== MODIFICATION START v7 (Matching User's Final Design) =====
                     cardTemplate.innerHTML = `
                         <div class="w-full h-full bg-black text-white p-0 flex flex-col font-sans relative overflow-hidden">
                             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 z-20"></div>
 
-                            <div class="absolute top-25 left-0 right-0 flex justify-center z-0">
-                                <span class="text-[12rem] font-extrabold text-gray-800" style="line-height: 1;">${report.mbtiType}</span>
+                            <div class="absolute top-6 right-6 text-center w-20">
+                                <div class="w-20 h-20 bg-white p-1 rounded-md shadow-lg mx-auto">
+                                    <img src="${quizQrCodeUrl}" alt="Quiz QR Code" class="w-full h-full object-contain">
+                                </div>
+                                <p class="text-[10px] text-white mt-2 font-semibold">掃描測你的房仲超能力</p>
                             </div>
 
-                            <div class="relative z-10 flex flex-col h-full pt-6 px-6 pb-12">
-                                <div class="flex-shrink-0 flex flex-col items-center text-center pt-8">
-                                    <div class="w-36 h-36 rounded-full border-4 border-white/80 shadow-lg bg-center bg-cover" style="background-image: url('${photoDataUrl}')"></div>
-                                    <h3 class="text-2xl font-bold mt-4 text-yellow-350">${agentTitle}</h3>
+                            <div class="relative z-10 flex flex-col h-full px-8">
+                                <div class="flex-shrink-0 flex flex-col items-center text-center pt-12">
+                                    <div class="absolute top-28 left-0 right-0 flex justify-center z-0 opacity-40">
+                                        <span class="text-[12rem] font-extrabold text-gray-800" style="line-height: 1;">${report.mbtiType}</span>
+                                    </div>
+                                    <div class="w-36 h-36 rounded-full border-4 border-white/80 shadow-lg bg-center bg-cover relative z-10" style="background-image: url('${photoDataUrl}')"></div>
+                                    <h3 class="text-2xl font-bold mt-4 text-white">${agentTitle}</h3>
                                     <p class="text-gray-300 text-md mt-1">${agentCompany}</p>
                                 </div>
 
-                                <div class="flex-grow flex items-center justify-center my-4">
-                                    <div class="text-center p-4 bg-black/40 rounded-lg border border-white/20 w-full max-w-xs backdrop-blur-sm">
+                                <div class="flex-shrink-0 my-8">
+                                    <div class="text-center p-4 mx-auto bg-black/40 rounded-lg border border-white/20 w-full max-w-sm backdrop-blur-sm">
                                         <p class="text-lg font-semibold text-yellow-300 mb-2">我是您的房仲【${report.type_name.split(' - ')[0]}】</p>
-                                        <p class="text-gray-200 leading-relaxed text-sm">${mainText}</p>
-                                        ${lastSentence ? `<p class="text-gray-200 mt-2 text-sm">${lastSentence}</p>` : ''}
+                                        <p class="text-white leading-relaxed text-sm">${mainText}</p>
+                                        <p class="text-white leading-relaxed text-sm mt-2">${lastSentence}</p>
                                     </div>
                                 </div>
-                                
-                                <div class="flex-shrink-0 w-full flex justify-between items-end">
-                                    
-                                    <div class="text-center w-24 flex-shrink-0">
-                                         <div class="w-16 h-16 bg-white p-1 rounded-md shadow-lg mx-auto">
-                                             <img src="${quizQrCodeUrl}" alt="Quiz QR Code" class="w-full h-full object-contain">
-                                         </div>
-                                         <p class="text-[10px] text-yellow-300 mt-2 font-semibold">掃描測你的房仲超能力</p>
-                                    </div>
 
-                                    <div class="text-center flex-grow px-2">
-                                        <h2 class="text-4xl font-extrabold leading-none whitespace-nowrap relative bottom-2" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">${agentName}</h2>
-                                        <div class="mt-2 space-y-1 text-gray-200">
-                                            <div class="flex items-center justify-center"><i data-lucide="phone" class="w-4 h-4 mr-2 text-yellow-400"></i><span class="whitespace-nowrap">${agentPhone}</span></div>
-                                            <div class="flex items-center justify-center"><i data-lucide="message-square" class="w-4 h-4 mr-2 text-yellow-400"></i><span class="whitespace-nowrap">LINE ID: ${agentLineId}</span></div>
+                                <div class="flex-grow"></div>
+
+                                <div class="flex-shrink-0 w-full flex justify-between items-end pb-10">
+                                    <div class="flex-shrink-0">
+                                        <h2 class="text-5xl font-extrabold leading-none" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">${agentName}</h2>
+                                        <div class="mt-3 space-y-2 text-white">
+                                            <div class="flex items-center"><i data-lucide="phone" class="w-5 h-5 mr-2 text-yellow-400"></i><span class="text-lg">${agentPhone}</span></div>
+                                            <div class="flex items-center"><i data-lucide="message-square" class="w-5 h-5 mr-2 text-yellow-400"></i><span class="text-lg">LINE ID: ${agentLineId}</span></div>
                                         </div>
                                     </div>
 
-                                    <div class="text-center w-24 flex-shrink-0">
-                                         <div class="w-20 h-20 bg-white p-1 rounded-md shadow-lg mx-auto">
+                                    <div class="text-center w-28 flex-shrink-0">
+                                         <div class="w-28 h-28 bg-white p-1 rounded-md shadow-lg mx-auto">
                                             <img src="${qrCodeDataUrl}" alt="QR Code" class="w-full h-full object-contain">
                                          </div>
-                                         <p class="text-xs text-gray-400 mt-1">掃描與我聯繫</p>
+                                         <p class="text-xs text-white mt-2">掃描與我聯繫</p>
                                     </div>
                                 </div>
                                 
                                 <div class="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 z-20 flex items-center justify-center">
-                                    <p class="text-black text-center text-[9px]">房仲16型人格測驗 by 桃園房仲專業顧問培智</p>
+                                    <p class="text-black text-center text-[9px]">${report.mbtiType} 房仲16型人格測驗 by 桃園房仲專業顧問培智</p>
                                 </div>
                             </div>
                         </div>
                     `;
-                    // ===== MODIFICATION END v4 =====
+                    // ===== MODIFICATION END v7 =====
 
                     lucide.createIcons();
                     
                     await fetch("/", {
                         method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        headers: { "Content-Type": "application/x-form-urlencoded" },
                         body: new URLSearchParams(formData).toString(),
                     });
 
@@ -1062,6 +1060,7 @@
     </script>
 </body>
 </html>
+
 
 
 
