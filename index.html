@@ -146,8 +146,7 @@
                         <input type="tel" id="agent-phone" name="agent-phone" class="form-input" placeholder="例如: 0912-345-678" required>
                     </div>
                     <div>
-                        <label for="agent-lineid" class="block text-sm font-medium text-gray-700 mb-1">LINE ID</label>
-                        <input type="text" id="agent-lineid" name="agent-lineid" class="form-input" placeholder="例如: mylineid" required>
+                        
                     </div>
                     <div class="flex items-center space-x-4">
                         <div class="w-1/2">
@@ -849,7 +848,6 @@
                 const agentName = formData.get('agent-name');
                 const agentTitle = formData.get('agent-title');
                 const agentPhone = formData.get('agent-phone');
-                const agentLineId = formData.get('agent-lineid');
                 const agentCompany = formData.get('agent-company');
                 const photoFile = agentPhotoInput.files[0];
                 const qrCodeFile = agentQrcodeInput.files[0];
@@ -919,7 +917,7 @@
                                         <h2 class="text-5xl font-extrabold leading-none" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">${agentName}</h2>
                                         <div class="mt-5 space-y-2 text-white">
                                             <div class="flex items-center"><i data-lucide="phone" class="w-5 h-5 mr-2 text-yellow-400"></i><span class="text-lg">${agentPhone}</span></div>
-                                            <div class="flex items-center"><i data-lucide="message-square" class="w-5 h-5 mr-2 text-yellow-400"></i><span class="text-lg break-all">LINE ID: ${agentLineId}</span></div>
+                                            
                                         </div>
                                     </div>
 
@@ -1061,6 +1059,7 @@
     </script>
 </body>
 </html>
+
 
 
 
