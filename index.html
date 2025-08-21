@@ -879,9 +879,9 @@
                         mainText = mainText.substring(0, splitIndex).trim();
                     }
 
-                    const quizQrCodeUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWAQMAAAAGz+OhAAAABlBMVEX///8AAABVwtN+AAABaklEQVRIie2WwW7DIAwF5/sotXROxc59C6joEDpeOHb/Q1JcEhAlGgSO/c/2GIH+wMvDAAAAAAAAAMBPbJvN5/OUfivV/lfV1fW3gO12e3/T6/W6bds2j8fjWywWb7Zt27qub5quD4IgaJpmu91uu9/v+/3+LMsyDMMwj8eDqqoLwzB+LBaLTNM0z/Oapt/v7/P5jM/zRFFEtVqtVqvVarPZPM/LsqzVar1e1zVN08/n8/V6fTCbzQZBETRN+/1+lmVZlq3X63q/3zMMf71er9frdTCbzWzbVlUVEUHrsizLMMz3+53P51mW5ePxeDgcPpfLdUEQpNFoNOv1uu/7uiz7fr/Lsuw4HD6bzWzb9oMg6PV63W633e93RVE8Ho+iKNo0zTAM3263p2mabdtVVd0gCF4ul6lWq6IoSjqdlmXZsqz7/X6/3+84jvP5fDabzdZtu65rkiRBEOTzeVVVZYqi6LquKIpE0TzPl2VZVZVE0bZt0zR5nh/P53m/3wMAAAAAAAD+2Q97Zg850iY0YAAAAABJRU5ErkJggg==";
+                    const quizQrCodeUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWAQMAAAAGz+OhAAAABlBMVEX///8AAABVwtN+AAABaklEQVRIie2WwW7DIAwF5/sotXROxc59C6joEDpeOHb/Q1JcEhAlGgSO/c/2GIH+wMvDAAAAAAAAAMBPbJvN5/OUfivV/lfV1fW3gO12e3/T6/W6bds2j8fjWywWb7Zt27qub5quD4IgaJpmu91uu9/v+/3+LMsyDMMwj8eDqqoLwzB+LBaLTNM0z/Oapt/v7/P5jM/zRFFEtVqtVqvVarPZPM/LsqzVar1e1zVN08/n8/V6fTCbzQZBETRN+/1+lmVZlq3X63q/3zMMf71er9frdTCbzWzbVlUVEUHrsizLMMz3+53P51mW5ePxeDgcPpfLdUEQpNFoNOv1uu/7uiz7fr/Lsuw4HD6bzWzb9oMg6PV63W633e93RVE8Ho+iKNo0zTAM3263p2mabdtVVd0gCF4ul6lWq6IoSjqdlmXZsqz7/X6/3+84jvP5fDabzdZtu65rkiRBEOTzeVVVZYqi6LquKIpE0TzPl2VZVZVE0bZt0zR5nh/P53m/3wMAAAAAAAD+2Q/7Zg850iY0YAAAAABJRU5ErkJggg==";
 
-                    // ===== MODIFICATION START v2 =====
+                    // ===== MODIFICATION START v3 =====
                     cardTemplate.innerHTML = `
                         <div class="w-full h-full bg-black text-white p-0 flex flex-col font-sans relative overflow-hidden">
                             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 z-20"></div>
@@ -915,8 +915,8 @@
                                     </div>
 
                                     <div class="text-center flex-grow px-2">
-                                        <h2 class="text-5xl font-extrabold leading-none whitespace-nowrap" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">${agentName}</h2>
-                                        <div class="mt-3 space-y-1 text-gray-200">
+                                        <h2 class="text-4xl font-extrabold leading-none whitespace-nowrap relative bottom-2" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">${agentName}</h2>
+                                        <div class="mt-2 space-y-1 text-gray-200">
                                             <div class="flex items-center justify-center"><i data-lucide="phone" class="w-4 h-4 mr-2 text-yellow-400"></i><span class="whitespace-nowrap">${agentPhone}</span></div>
                                             <div class="flex items-center justify-center"><i data-lucide="message-square" class="w-4 h-4 mr-2 text-yellow-400"></i><span class="whitespace-nowrap">LINE ID: ${agentLineId}</span></div>
                                         </div>
@@ -936,7 +936,7 @@
                             </div>
                         </div>
                     `;
-                    // ===== MODIFICATION END v2 =====
+                    // ===== MODIFICATION END v3 =====
 
                     lucide.createIcons();
                     
@@ -1060,6 +1060,7 @@
     </script>
 </body>
 </html>
+
 
 
 
