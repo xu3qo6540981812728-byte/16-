@@ -177,6 +177,7 @@
             </form>
         </div>
     </div>
+
     <div id="poster-modal-business" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full text-center transform transition-all relative" style="animation: fadeIn 0.3s ease-out;">
             <button id="close-poster-modal-business" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
@@ -185,13 +186,32 @@
             <h2 class="text-2xl font-bold mb-4 text-gray-800">您的客戶專屬名片海報</h2>
             <div id="poster-image-container-business" class="mb-4 border-2 border-gray-200 rounded-lg overflow-hidden"></div>
             <p class="text-gray-600 mb-4">長按圖片即可儲存或分享給客戶！</p>
-            <a id="download-poster-btn-business" href="#" download="real-estate-business-card.png" class="inline-block w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200">
-                下載海報
-            </a>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <a id="download-poster-btn-business" href="#" download="real-estate-business-card.png" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200">
+                    下載海報
+                </a>
+                <button id="show-share-text-btn" type="button" class="w-full px-6 py-3 bg-teal-500 text-white rounded-full font-semibold hover:bg-teal-600 transition-all">
+                    複製分享文案
+                </button>
+            </div>
         </div>
     </div>
 
-
+    <div id="share-text-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full transform transition-all relative" style="animation: fadeIn 0.3s ease-out;">
+            <button id="close-share-text-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 text-center">建議搭配此文案分享！</h2>
+            <p class="text-gray-500 mb-4 text-center">讓客戶和朋友更了解您的專業魅力！</p>
+            <textarea id="share-text-content" readonly class="w-full h-48 p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none" style="resize: none;"></textarea>
+            <div class="mt-6">
+                <button id="copy-share-text-btn-2" class="w-full px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-all duration-200">
+                    一鍵複製文案
+                </button>
+            </div>
+        </div>
+    </div>
     <div id="app-container">
         <div id="intro-page" class="page active flex-col items-center justify-between min-h-screen p-4 text-center">
             <div class="flex-grow flex items-center justify-center w-full">
@@ -327,6 +347,13 @@
             const qrcodePreview = document.getElementById('qrcode-preview');
             const agentPhotoText = document.getElementById('agent-photo-text');
             const agentQrcodeText = document.getElementById('agent-qrcode-text');
+
+            // --- NEW DOM ELEMENTS for Share Text Modal ---
+            const showShareTextBtn = document.getElementById('show-share-text-btn');
+            const shareTextModal = document.getElementById('share-text-modal');
+            const closeShareTextModalBtn = document.getElementById('close-share-text-modal');
+            const shareTextContent = document.getElementById('share-text-content');
+            const copyShareTextBtn2 = document.getElementById('copy-share-text-btn-2');
 
 
             // --- FUNCTIONS ---
@@ -855,28 +882,25 @@
                         mainText = mainText.substring(0, splitIndex).trim();
                     }
 
-                    // === MODIFICATION START: New Business Card Poster Layout ===
-                    // The following HTML block is the new template based on the user's image.
+                    // ===== MODIFICATION START: New Business Card Poster Layout with Quiz QR Code =====
+                    // This is a Base64 encoded QR code for the URL: https://your-quiz-url.com
+                    const quizQrCodeUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWAQMAAAAGz+OhAAAABlBMVEX///8AAABVwtN+AAABaklEQVRIie2WwW7DIAwF5/sotXROxc59C6joEDpeOHb/Q1JcEhAlGgSO/c/2GIH+wMvDAAAAAAAAAMBPbJvN5/OUfivV/lfV1fW3gO12e3/T6/W6bds2j8fjWywWb7Zt27qub5quD4IgaJpmu91uu9/v+/3+LMsyDMMwj8eDqqoLwzB+LBaLTNM0z/Oapt/v7/P5jM/zRFFEtVqtVqvVarPZPM/LsqzVar1e1zVN08/n8/V6fTCbzQZBETRN+/1+lmVZlq3X63q/3zMMf71er9frdTCbzWzbVlUVEUHrsizLMMz3+53P51mW5ePxeDgcPpfLdUEQpNFoNOv1uu/7uiz7fr/Lsuw4HD6bzWzb9oMg6PV63W633e93RVE8Ho+iKNo0zTAM3263p2mabdtVVd0gCF4ul6lWq6IoSjqdlmXZsqz7/X6/3+84jvP5fDabzdZtu65rkiRBEOTzeVVVZYqi6LquKIpE0TzPl2VZVZVE0bZt0zR5nh/P53m/3wMAAAAAAAD+2Q97Zg850iY0YAAAAABJRU5ErkJggg==";
+
                     cardTemplate.innerHTML = `
                         <div class="w-full h-full bg-black text-white p-0 flex flex-col font-sans relative overflow-hidden">
-                            <!-- Golden Top Bar -->
                             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 z-20"></div>
 
-                            <!-- Giant MBTI Background Text -->
                             <div class="absolute top-25 left-0 right-0 flex justify-center z-0">
                                 <span class="text-[12rem] font-extrabold text-gray-800" style="line-height: 1;">${report.mbtiType}</span>
                             </div>
 
-                            <!-- Main Content Wrapper -->
                             <div class="relative z-10 flex flex-col h-full pt-6 px-6 pb-12">
-                                <!-- Top Section: Photo & Title -->
                                 <div class="flex-shrink-0 flex flex-col items-center text-center pt-8">
                                     <div class="w-36 h-36 rounded-full border-4 border-white/80 shadow-lg bg-center bg-cover" style="background-image: url('${photoDataUrl}')"></div>
                                     <h3 class="text-2xl font-bold mt-4 text-yellow-350">${agentTitle}</h3>
                                     <p class="text-gray-300 text-md mt-1">${agentCompany}</p>
                                 </div>
 
-                                <!-- Middle Section: Description -->
                                 <div class="flex-grow flex items-center justify-center my-4">
                                     <div class="text-center p-4 bg-black/40 rounded-lg border border-white/20 w-full max-w-xs backdrop-blur-sm">
                                         <p class="text-lg font-semibold text-yellow-300 mb-2">我是您的房仲【${report.type_name.split(' - ')[0]}】</p>
@@ -885,31 +909,33 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Bottom Section: Name, Contact, QR Code -->
                                 <div class="flex-shrink-0 w-full flex justify-between items-end">
-                                    <!-- Left: Name & Contact -->
-                                    <div class="text-left">
+                                    <div class="text-center w-28">
+                                         <img src="${quizQrCodeUrl}" alt="Quiz QR Code" class="w-20 h-20 object-contain bg-white p-1 rounded-md shadow-lg mx-auto">
+                                         <p class="text-xs text-yellow-300 mt-2 font-semibold">掃描測你的房仲超能力</p>
+                                    </div>
+
+                                    <div class="text-center flex-grow">
                                         <h2 class="text-5xl font-extrabold leading-none" style="text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">${agentName}</h2>
                                         <div class="mt-3 space-y-1 text-gray-200">
-                                            <div class="flex items-center"><i data-lucide="phone" class="w-4 h-4 mr-2 text-yellow-400"></i><span>${agentPhone}</span></div>
-                                            <div class="flex items-center"><i data-lucide="message-square" class="w-4 h-4 mr-2 text-yellow-400"></i><span>LINE ID: ${agentLineId}</span></div>
+                                            <div class="flex items-center justify-center"><i data-lucide="phone" class="w-4 h-4 mr-2 text-yellow-400"></i><span>${agentPhone}</span></div>
+                                            <div class="flex items-center justify-center"><i data-lucide="message-square" class="w-4 h-4 mr-2 text-yellow-400"></i><span>LINE ID: ${agentLineId}</span></div>
                                         </div>
                                     </div>
-                                    <!-- Right: QR Code -->
-                                    <div class="text-center">
-                                         <img src="${qrCodeDataUrl}" alt="QR Code" class="w-24 h-24 object-contain bg-white p-1 rounded-md shadow-lg">
-                                         <p class="text-xs text-gray-400 mt-1">掃描與我聯繫</p>
+
+                                    <div class="text-center w-28">
+                                         <img src="${qrCodeDataUrl}" alt="QR Code" class="w-20 h-20 object-contain bg-white p-1 rounded-md shadow-lg mx-auto">
+                                         <p class="text-xs text-gray-400 mt-2">掃描與我聯繫</p>
                                     </div>
-                                    <!-- Golden Footer Bar -->
-<div class="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 z-20 flex items-center justify-center">
-    <p class="text-black text-center text-[9px]">房仲16型人格測驗 by 桃園房仲專業顧問培智</p>
-</div>
-</div>
+                                </div>
+                                
+                                <div class="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 z-20 flex items-center justify-center">
+                                    <p class="text-black text-center text-[9px]">房仲16型人格測驗 by 桃園房仲專業顧問培智</p>
                                 </div>
                             </div>
                         </div>
                     `;
-                    // === MODIFICATION END ===
+                    // ===== MODIFICATION END =====
 
                     lucide.createIcons();
                     
@@ -930,6 +956,23 @@
                         // Show poster and hide loader
                         posterModalBusiness.style.display = 'flex';
                         hideLoader();
+
+                        // ===== MODIFICATION START: Prepare and show share text modal =====
+                        // !! IMPORTANT: Replace with your actual quiz URL !!
+                        const quizUrl = window.location.href; 
+                        const personalityName = report.type_name.split(' - ')[0]; // e.g., "鐵血店長型"
+                        const personalityText = report.client_perspective_text;
+                        
+                        const dynamicShareText = `我是您的房仲顧問【${agentName}】，很高興能為您服務！
+透過科學的16型人格測驗，我的房仲標籤是【${personalityName}】，代表「${personalityText}」
+想知道您在房地產的隱藏潛力嗎？或是想找一位最懂您的房仲？也來玩玩看吧！
+測驗連結： ${quizUrl}`;
+                        
+                        shareTextContent.value = dynamicShareText;
+                        // We don't show it automatically, user clicks the button
+                        // shareTextModal.style.display = 'flex'; 
+                        // ===== MODIFICATION END =====
+
                     }, 500);
 
                 } catch (error) {
@@ -994,6 +1037,29 @@
             closePosterModalBusinessBtn.addEventListener('click', () => { posterModalBusiness.style.display = 'none'; });
             setupFileInputPreview(agentPhotoInput, photoPreview, agentPhotoText);
             setupFileInputPreview(agentQrcodeInput, qrcodePreview, agentQrcodeText);
+
+            // --- NEW EVENT LISTENERS for Share Text Modal ---
+            showShareTextBtn.addEventListener('click', () => {
+                shareTextModal.style.display = 'flex';
+            });
+            closeShareTextModalBtn.addEventListener('click', () => {
+                shareTextModal.style.display = 'none';
+            });
+            copyShareTextBtn2.addEventListener('click', () => {
+                // Use the modern clipboard API
+                navigator.clipboard.writeText(shareTextContent.value).then(() => {
+                    const originalText = copyShareTextBtn2.textContent;
+                    copyShareTextBtn2.textContent = '文案已複製！';
+                    copyShareTextBtn2.disabled = true;
+                    setTimeout(() => {
+                        copyShareTextBtn2.textContent = originalText;
+                        copyShareTextBtn2.disabled = false;
+                    }, 2500);
+                }).catch(err => {
+                    console.error('無法複製文字: ', err);
+                    alert('複製失敗，您的瀏覽器可能不支援此功能。');
+                });
+            });
             
             lucide.createIcons();
             setupFirebase();
@@ -1002,12 +1068,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
