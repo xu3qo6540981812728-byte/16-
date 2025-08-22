@@ -32,6 +32,17 @@
     </script>
 
     <style>
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 80px; /* 這個值很重要，確保跳轉後區塊標題不會被導覽列擋住 */
+    }
+    .result-nav-link.active {
+        color: #4f46e5; /* 作用中連結的顏色 (indigo-600) */
+        background-color: #e0e7ff; /* 作用中連結的背景色 (indigo-100) */
+    }
+    /* === END: 新的 CSS 結束 === */
+
+    .page { display: none; animation: fadeIn 0.5s ease-in-out; }
         .page { display: none; animation: fadeIn 0.5s ease-in-out; }
         .page.active { display: flex; }
         @keyframes fadeIn {
@@ -314,15 +325,32 @@
         </div>
 
         <div id="result-page" class="page flex-col items-center justify-between min-h-screen p-4">
-            <div class="flex-grow flex items-center justify-center w-full my-8">
-                <div class="flex flex-col items-center">
-                    <div id="result-content" class="w-full max-w-3xl"></div>
+
+    <div id="result-nav" class="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-sm shadow-md mb-4 rounded-full">
+        <div class="max-w-3xl mx-auto flex items-center justify-center space-x-2 sm:space-x-4 p-2">
+            <a href="#gemini-section" class="result-nav-link text-sm sm:text-base text-gray-600 font-semibold px-3 py-2 rounded-full hover:bg-indigo-100 transition-all duration-300 flex items-center space-x-1">
+                <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+                <span>AI分析</span>
+            </a>
+            <a href="#share-section" class="result-nav-link text-sm sm:text-base text-gray-600 font-semibold px-3 py-2 rounded-full hover:bg-indigo-100 transition-all duration-300 flex items-center space-x-1">
+                <i data-lucide="share-2" class="w-4 h-4"></i>
+                <span>分享海報</span>
+            </a>
+            <a href="#footer-section" class="result-nav-link text-sm sm:text-base text-gray-600 font-semibold px-3 py-2 rounded-full hover:bg-indigo-100 transition-all duration-300 flex items-center space-x-1">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span>認識我們</span>
+            </a>
+        </div>
+    </div>
+    <div class="flex-grow flex items-center justify-center w-full my-8">
+        <div class="flex flex-col items-center">
+            <div id="result-content" class="w-full max-w-3xl"></div>
                     <button id="retake-btn" type="button" class="mt-8 px-6 py-2 bg-gray-200 text-gray-700 rounded-full shadow-md hover:bg-gray-300 transition-all duration-200">
                         返回首頁
                     </button>
                 </div>
             </div>
-             <footer class="w-full py-6 mt-8">
+             <footer id="footer-section"class="w-full py-6 mt-8">
                 <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 px-4">
                     <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
                         <a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
@@ -613,7 +641,7 @@
                             <div id="gemini-section" class="mt-8 pt-6 border-t-2 border-dashed border-indigo-200">${renderGeminiSection()}</div>
                         </div>
                         
-                        <div class="mt-8 pt-6 border-t-2 border-indigo-200 text-center">
+                        <div id="share-section"class="mt-8 pt-6 border-t-2 border-indigo-200 text-center">
                             <h3 class="text-2xl font-semibold text-gray-800 mb-4">分享成果 & 拓展事業</h3>
                             <p class="text-gray-500 mb-6">將你的超能力分享出去，或製作專屬海報吸引客戶！</p>
                             <div class="flex flex-col sm:flex-row justify-center items-center gap-4 flex-wrap">
@@ -1114,6 +1142,7 @@
     </script>
 </body>
 </html>
+
 
 
 
