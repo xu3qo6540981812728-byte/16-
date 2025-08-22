@@ -663,13 +663,50 @@
                 `;
                 resultContentEl.innerHTML = html;
                 lucide.createIcons();
-                
                 renderRadarChart(report.superpowerScores);
                 
                 document.getElementById('gemini-analysis-btn')?.addEventListener('click', handleGeminiAnalysis);
                 document.getElementById('generate-poster-btn').addEventListener('click', handleGeneratePoster);
                 document.getElementById('copy-share-btn').addEventListener('click', handleCopyShareText);
                 document.getElementById('generate-business-card-btn').addEventListener('click', handleGenerateBusinessCard);
+
+                setupResultPageObserver();
+             const setupResultPageObserver = () => {
+                const navLinks = document.querySelectorAll('.result-nav-link');
+                const sections = [
+                    document.getElementById('gemini-section'),
+                    document.getElementById('share-section'),
+                    document.getElementById('footer-section')
+                ];
+
+                const observerOptions = {
+                    root: null,
+                    rootMargin: '-40% 0px -60% 0px', // 在畫面中間區域觸發
+                    threshold: 0
+                };
+
+                const observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const targetId = entry.target.id;
+                            navLinks.forEach(link => {
+                                // link.href.split('#')[1] 會取得 href 中的 id
+                                if (link.href.split('#')[1] === targetId) {
+                                    link.classList.add('active');
+                                } else {
+                                    link.classList.remove('active');
+                                }
+                            });
+                        }
+                    });
+                }, observerOptions);
+
+                sections.forEach(section => {
+                    if (section) {
+                        observer.observe(section);
+                    }
+                });
+            };   
             };
 
             const renderRadarChart = (scores) => {
@@ -1142,6 +1179,7 @@
     </script>
 </body>
 </html>
+
 
 
 
