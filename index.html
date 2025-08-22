@@ -676,69 +676,66 @@
                 document.getElementById('generate-business-card-btn').addEventListener('click', handleGenerateBusinessCard);
 
                 setupResultPageObserver();
-             const setupResultPageObserver = () => {
-                // --- 第一部分：處理下方區塊的連結高亮 (這部分不變) ---
-                const navLinks = document.querySelectorAll('.result-nav-link');
-                const sections = [
+            
+            };
+const setupResultPageObserver = () => {
+                // --- 修正問題點：將兩個功能所需的變數先準備好 ---
+                const navLinks = document.querySelectorAll('.result-nav-link[href^="#"]'); // 只選取錨點連結
+                const topLink = document.getElementById('back-to-top-link');
+                const reportTop = document.getElementById('result-content');
+                const sections = [ // 移除了 result-content，因为它只用于 topObserver
                     document.getElementById('gemini-section'),
                     document.getElementById('share-section'),
                     document.getElementById('footer-section')
                 ];
-                const observerOptions = {
+
+                // --- 第一部分：處理下方區塊的連結高亮 (已修正) ---
+                const highlightObserverOptions = {
                     root: null,
-                    rootMargin: '-40% 0px -60% 0px',
+                    // *** 修正點 1：修改 rootMargin 避免瀏覽器計算錯誤 ***
+                    // 這個設定代表，當區塊進入畫面中央 30% 的區域時，觸發高亮
+                    rootMargin: '-35% 0px -35% 0px',
                     threshold: 0
                 };
-                const observer = new IntersectionObserver((entries, observer) => {
+
+                const highlightObserver = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
+                        // *** 修正點 2：簡化並修正高亮邏輯 ***
                         if (entry.isIntersecting) {
+                            // 先移除所有連結的高亮
+                            navLinks.forEach(link => link.classList.remove('active'));
+                            
+                            // 再找到對應的連結並加上高亮
                             const targetId = entry.target.id;
-                            navLinks.forEach(link => {
-                                if (link.href.split('#')[1] === targetId) {
-                                    link.classList.add('active');
-                                } else {
-                                    link.classList.remove('active');
-                                }
-                            });
+                            const activeLink = document.querySelector(`.result-nav-link[href="#${targetId}"]`);
+                            if (activeLink) {
+                                activeLink.classList.add('active');
+                            }
                         }
                     });
-                }, observerOptions);
+                }, highlightObserverOptions);
+
                 sections.forEach(section => {
-                    if (section) { observer.observe(section); }
+                    if (section) {
+                        highlightObserver.observe(section);
+                    }
                 });
 
-                // --- START: 第二部分：新增控制「回到頂端」按鈕的邏輯 ---
-                const topLink = document.getElementById('back-to-top-link');
-                const reportTop = document.getElementById('result-content');
-
+                // --- 第二部分：控制「回到頂端」按鈕 (這部分邏輯沒問題，保持不變) ---
                 const topObserver = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
-                        // isIntersecting 為 true 代表「報告頂部」在畫面上
-                        // 所以當它「不在」畫面上時，我們才顯示按鈕
-                        if (!entry.isIntersecting) {
+                        if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
                             topLink.classList.remove('hidden');
                         } else {
                             topLink.classList.add('hidden');
                         }
                     });
-                }, { threshold: 0 }); // threshold: 0 表示只要目標元素一離開畫面就觸發
+                }, { rootMargin: '0px 0px -100% 0px' }); // 使用更精確的 rootMargin
 
                 if (topLink && reportTop) {
                     topObserver.observe(reportTop);
                 }
-                // --- END: 新邏輯結束 ---
             };
-                    });
-                }, observerOptions);
-
-                sections.forEach(section => {
-                    if (section) {
-                        observer.observe(section);
-                    }
-                });
-            };   
-            };
-
             const renderRadarChart = (scores) => {
                 const ctx = document.getElementById('radarChart')?.getContext('2d');
                 if (!ctx) return;
@@ -1209,6 +1206,7 @@
     </script>
 </body>
 </html>
+
 
 
 
