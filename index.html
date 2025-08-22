@@ -97,7 +97,53 @@
     </style>
 </head>
 <body class="bg-gray-50">
-    
+    <div id="splash-screen" class="fixed inset-0 bg-black flex items-center justify-center z-[100]">
+        <img id="splash-icon" src="/icons/apple-touch-icon.png" alt="Logo" class="w-32 h-32">
+    </div>
+    ```
+
+**重要：**
+* 請確認 `src="/icons/apple-touch-icon.png"` 這個路徑是正確的。我們在這裡使用 `180x180` 像素的 `apple-touch-icon.png`，因為它尺寸較大，顯示效果會比較清晰。
+* 我們給予了極高的 `z-[100]` 層級，確保它一開始會顯示在所有內容的最上方。
+
+### 步驟二：為 Icon 設計 CSS 動畫
+
+接下來，我們要用 CSS 來賦予這個 Icon 生命力。
+
+請將下面這段 CSS 程式碼，**複製**並**貼到** `<head>` 區塊裡的 `<style>` 標籤**結尾處** (`</style>` 的前面)。
+
+```css
+        /* --- Splash Screen 動畫 --- */
+        #splash-screen {
+            transition: opacity 0.5s ease-out; /* 用於之後的淡出效果 */
+        }
+        #splash-icon {
+            animation: popIn 2.5s ease-in-out forwards; /* 套用 popIn 動畫，持續 2.5 秒 */
+        }
+        
+        /* 定義一個名為 popIn 的動畫 */
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            30% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+            50% {
+                transform: scale(1);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        /* 用於淡出整個畫面的 class */
+        .splash-fade-out {
+            opacity: 0 !important;
+        }
     <div id="loading-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center">
             <div class="loader mx-auto"></div>
@@ -219,7 +265,7 @@
             </div>
         </div>
     </div>
-    <div id="app-container">
+    <div id="app-container" style="display: none;">
         <div id="intro-page" class="page active flex-col items-center justify-between min-h-screen p-4 text-center">
             <div class="flex-grow flex items-center justify-center w-full">
                 <div class="p-8 bg-white rounded-xl shadow-2xl max-w-2xl w-full">
@@ -308,6 +354,18 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- 啟動畫面控制邏輯 ---
+        const splashScreen = document.getElementById('splash-screen');
+        const appContainer = document.getElementById('app-container');
+        const splashDuration = 2800; // 動畫總時長 (2.8 秒)
+
+        setTimeout(() => {
+            splashScreen.classList.add('splash-fade-out');
+            setTimeout(() => {
+                splashScreen.style.display = 'none';
+                appContainer.style.display = 'block';
+            }, 500);
+        // --- 控制邏輯結束 ---
             // --- STATE MANAGEMENT ---
             let currentPage = 'intro';
             let answers = {};
@@ -1063,10 +1121,12 @@
             lucide.createIcons();
             setupFirebase();
             initializeQuiz();
+            }, splashDuration);
         });
     </script>
 </body>
 </html>
+
 
 
 
