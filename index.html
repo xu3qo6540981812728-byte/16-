@@ -717,7 +717,10 @@
                             topLink.classList.add('hidden');
                         }
                     });
-                }, { rootMargin: '-10px 0px 0px 0px' });
+                }, { 
+                    rootMargin: '-10px 0px 0px 0px',
+                    threshold: 0 // <--- 請補上這一行
+                });
 
                 if (topLink && reportTop) {
                     topObserver.observe(reportTop);
@@ -1191,6 +1194,7 @@
     </script>
 </body>
 </html>
+
 
 
 
