@@ -140,7 +140,7 @@
 </head>
 <body class="bg-gray-50">
     <div id="splash-screen" class="fixed inset-0 bg-black flex items-center justify-center z-[100]">
-        <img id="splash-icon" src="/icons/Start-animation.png" alt="Logo" class="w-32 h-32">
+        <img id="splash-icon" src="/icons/Start-animation.GIF" alt="Logo" class="w-32 h-32">
     </div>
     <div id="loading-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center">
@@ -377,7 +377,7 @@
             // --- 啟動畫面控制邏輯 ---
             const splashScreen = document.getElementById('splash-screen');
             const appContainer = document.getElementById('app-container');
-            const splashDuration = 2800; // 動畫總時長 (2.8 秒)
+            const splashDuration = 3500; // 動畫總時長 (3.5秒)
 
             setTimeout(() => {
                 splashScreen.classList.add('splash-fade-out');
@@ -1194,6 +1194,7 @@
     </script>
 </body>
 </html>
+
 
 
 
