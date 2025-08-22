@@ -100,7 +100,9 @@
             transition: opacity 0.5s ease-out;
         }
         #splash-icon {
-            animation: popIn 2.5s ease-in-out forwards;
+            animation: popIn 2.5s ease-in-out forwards; /* 套用 popIn 動畫，持續 2.5 秒 */
+            box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.5); /* 添加一個模糊的黑色陰影 */
+            border-radius: 10px; /* 輕微的圓角，有助於柔化邊緣 */
         }
         
         @keyframes popIn {
@@ -1112,6 +1114,7 @@
     </script>
 </body>
 </html>
+
 
 
 
