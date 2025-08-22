@@ -355,7 +355,7 @@
                     </button>
                 </div>
             </div>
-             <footer id="footer-section"class="w-full py-6 mt-8">
+             <footer id="footer-section" class="w-full py-6 mt-8">
                 <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-6 px-4">
                     <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
                         <a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-indigo-600 transition-colors duration-300">
@@ -376,17 +376,18 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- 啟動畫面控制邏輯 ---
-        const splashScreen = document.getElementById('splash-screen');
-        const appContainer = document.getElementById('app-container');
-        const splashDuration = 2800; // 動畫總時長 (2.8 秒)
+            const splashScreen = document.getElementById('splash-screen');
+            const appContainer = document.getElementById('app-container');
+            const splashDuration = 2800; // 動畫總時長 (2.8 秒)
 
-        setTimeout(() => {
-            splashScreen.classList.add('splash-fade-out');
             setTimeout(() => {
-                splashScreen.style.display = 'none';
-                appContainer.style.display = 'block';
-            }, 500);
-        // --- 控制邏輯結束 ---
+                splashScreen.classList.add('splash-fade-out');
+                setTimeout(() => {
+                    splashScreen.style.display = 'none';
+                    appContainer.style.display = 'block';
+                }, 500);
+            }, splashDuration);
+            // --- 控制邏輯結束 ---
             // --- STATE MANAGEMENT ---
             let currentPage = 'intro';
             let answers = {};
@@ -398,7 +399,7 @@
             let isGeminiLoading = false;
             let resultReport = {};
             let radarChartInstance = null;
-            let questions = []; 
+            let questions = [];
 
             // --- DOM ELEMENTS ---
             const introPage = document.getElementById('intro-page');
@@ -433,17 +434,13 @@
             const qrcodePreview = document.getElementById('qrcode-preview');
             const agentPhotoText = document.getElementById('agent-photo-text');
             const agentQrcodeText = document.getElementById('agent-qrcode-text');
-
-            // --- NEW DOM ELEMENTS for Share Text Modal ---
             const showShareTextBtn = document.getElementById('show-share-text-btn');
             const shareTextModal = document.getElementById('share-text-modal');
             const closeShareTextModalBtn = document.getElementById('close-share-text-modal');
             const shareTextContent = document.getElementById('share-text-content');
             const copyShareTextBtn2 = document.getElementById('copy-share-text-btn-2');
 
-
             // --- FUNCTIONS ---
-            
             const showLoader = (text = '載入中...') => {
                 loadingText.textContent = text;
                 loadingModal.style.display = 'flex';
@@ -559,7 +556,7 @@
                 });
                 updateNavButtons();
             };
-            
+
             const renderResult = () => {
                 const report = resultReport;
                 if (!report || !report.mbtiType) {
@@ -646,7 +643,7 @@
                             <div id="gemini-section" class="mt-8 pt-6 border-t-2 border-dashed border-indigo-200">${renderGeminiSection()}</div>
                         </div>
                         
-                        <div id="share-section"class="mt-8 pt-6 border-t-2 border-indigo-200 text-center">
+                        <div id="share-section" class="mt-8 pt-6 border-t-2 border-indigo-200 text-center">
                             <h3 class="text-2xl font-semibold text-gray-800 mb-4">分享成果 & 拓展事業</h3>
                             <p class="text-gray-500 mb-6">將你的超能力分享出去，或製作專屬海報吸引客戶！</p>
                             <div class="flex flex-col sm:flex-row justify-center items-center gap-4 flex-wrap">
@@ -674,38 +671,30 @@
                 document.getElementById('generate-poster-btn').addEventListener('click', handleGeneratePoster);
                 document.getElementById('copy-share-btn').addEventListener('click', handleCopyShareText);
                 document.getElementById('generate-business-card-btn').addEventListener('click', handleGenerateBusinessCard);
-
+                
                 setupResultPageObserver();
-            
             };
-const setupResultPageObserver = () => {
-                // --- 修正問題點：將兩個功能所需的變數先準備好 ---
-                const navLinks = document.querySelectorAll('.result-nav-link[href^="#"]'); // 只選取錨點連結
+
+            const setupResultPageObserver = () => {
+                const navLinks = document.querySelectorAll('.result-nav-link[href^="#"]');
                 const topLink = document.getElementById('back-to-top-link');
                 const reportTop = document.getElementById('result-content');
-                const sections = [ // 移除了 result-content，因为它只用于 topObserver
+                const sections = [
                     document.getElementById('gemini-section'),
                     document.getElementById('share-section'),
                     document.getElementById('footer-section')
                 ];
 
-                // --- 第一部分：處理下方區塊的連結高亮 (已修正) ---
                 const highlightObserverOptions = {
                     root: null,
-                    // *** 修正點 1：修改 rootMargin 避免瀏覽器計算錯誤 ***
-                    // 這個設定代表，當區塊進入畫面中央 30% 的區域時，觸發高亮
                     rootMargin: '-35% 0px -35% 0px',
                     threshold: 0
                 };
 
                 const highlightObserver = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
-                        // *** 修正點 2：簡化並修正高亮邏輯 ***
                         if (entry.isIntersecting) {
-                            // 先移除所有連結的高亮
                             navLinks.forEach(link => link.classList.remove('active'));
-                            
-                            // 再找到對應的連結並加上高亮
                             const targetId = entry.target.id;
                             const activeLink = document.querySelector(`.result-nav-link[href="#${targetId}"]`);
                             if (activeLink) {
@@ -721,7 +710,6 @@ const setupResultPageObserver = () => {
                     }
                 });
 
-                // --- 第二部分：控制「回到頂端」按鈕 (這部分邏輯沒問題，保持不變) ---
                 const topObserver = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
                         if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
@@ -730,12 +718,13 @@ const setupResultPageObserver = () => {
                             topLink.classList.add('hidden');
                         }
                     });
-                }, { rootMargin: '0px 0px -100% 0px' }); // 使用更精確的 rootMargin
+                }, { rootMargin: '0px 0px -100% 0px' });
 
                 if (topLink && reportTop) {
                     topObserver.observe(reportTop);
                 }
             };
+
             const renderRadarChart = (scores) => {
                 const ctx = document.getElementById('radarChart')?.getContext('2d');
                 if (!ctx) return;
@@ -1175,7 +1164,6 @@ const setupResultPageObserver = () => {
             setupFileInputPreview(agentPhotoInput, photoPreview, agentPhotoText);
             setupFileInputPreview(agentQrcodeInput, qrcodePreview, agentQrcodeText);
 
-            // --- NEW EVENT LISTENERS for Share Text Modal ---
             showShareTextBtn.addEventListener('click', () => {
                 shareTextModal.style.display = 'flex';
             });
@@ -1183,7 +1171,6 @@ const setupResultPageObserver = () => {
                 shareTextModal.style.display = 'none';
             });
             copyShareTextBtn2.addEventListener('click', () => {
-                // Use the modern clipboard API
                 navigator.clipboard.writeText(shareTextContent.value).then(() => {
                     const originalText = copyShareTextBtn2.textContent;
                     copyShareTextBtn2.textContent = '文案已複製！';
@@ -1201,11 +1188,11 @@ const setupResultPageObserver = () => {
             lucide.createIcons();
             setupFirebase();
             initializeQuiz();
-            }, splashDuration);
         });
     </script>
 </body>
 </html>
+
 
 
 
