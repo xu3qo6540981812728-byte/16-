@@ -328,6 +328,11 @@
 
     <div id="result-nav" class="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-sm shadow-md mb-4 rounded-full">
         <div class="max-w-3xl mx-auto flex items-center justify-center space-x-2 sm:space-x-4 p-2">
+
+            <a id="back-to-top-link" href="#result-content" class="result-nav-link text-sm sm:text-base text-gray-600 font-semibold px-3 py-2 rounded-full hover:bg-indigo-100 transition-all duration-300 flex items-center space-x-1 hidden">
+            <i data-lucide="arrow-up-circle" class="w-4 h-4"></i>
+            <span>回頂部</span>
+        </a>
             <a href="#gemini-section" class="result-nav-link text-sm sm:text-base text-gray-600 font-semibold px-3 py-2 rounded-full hover:bg-indigo-100 transition-all duration-300 flex items-center space-x-1">
                 <i data-lucide="brain-circuit" class="w-4 h-4"></i>
                 <span>AI分析</span>
@@ -672,25 +677,23 @@
 
                 setupResultPageObserver();
              const setupResultPageObserver = () => {
+                // --- 第一部分：處理下方區塊的連結高亮 (這部分不變) ---
                 const navLinks = document.querySelectorAll('.result-nav-link');
                 const sections = [
                     document.getElementById('gemini-section'),
                     document.getElementById('share-section'),
                     document.getElementById('footer-section')
                 ];
-
                 const observerOptions = {
                     root: null,
-                    rootMargin: '-40% 0px -60% 0px', // 在畫面中間區域觸發
+                    rootMargin: '-40% 0px -60% 0px',
                     threshold: 0
                 };
-
                 const observer = new IntersectionObserver((entries, observer) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
                             const targetId = entry.target.id;
                             navLinks.forEach(link => {
-                                // link.href.split('#')[1] 會取得 href 中的 id
                                 if (link.href.split('#')[1] === targetId) {
                                     link.classList.add('active');
                                 } else {
@@ -698,6 +701,33 @@
                                 }
                             });
                         }
+                    });
+                }, observerOptions);
+                sections.forEach(section => {
+                    if (section) { observer.observe(section); }
+                });
+
+                // --- START: 第二部分：新增控制「回到頂端」按鈕的邏輯 ---
+                const topLink = document.getElementById('back-to-top-link');
+                const reportTop = document.getElementById('result-content');
+
+                const topObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        // isIntersecting 為 true 代表「報告頂部」在畫面上
+                        // 所以當它「不在」畫面上時，我們才顯示按鈕
+                        if (!entry.isIntersecting) {
+                            topLink.classList.remove('hidden');
+                        } else {
+                            topLink.classList.add('hidden');
+                        }
+                    });
+                }, { threshold: 0 }); // threshold: 0 表示只要目標元素一離開畫面就觸發
+
+                if (topLink && reportTop) {
+                    topObserver.observe(reportTop);
+                }
+                // --- END: 新邏輯結束 ---
+            };
                     });
                 }, observerOptions);
 
@@ -1179,6 +1209,7 @@
     </script>
 </body>
 </html>
+
 
 
 
