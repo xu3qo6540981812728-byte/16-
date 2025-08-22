@@ -590,7 +590,7 @@
                 let html = `
                     <div class="p-6 bg-white rounded-xl shadow-lg w-full max-w-3xl">
                         <div class="space-y-8">
-                            <div class="text-center">
+                            <div id="report-header" class="text-center">
                                 <i data-lucide="check-circle" class="w-12 h-12 text-indigo-500 mx-auto mb-4"></i>
                                 <h2 class="text-4xl font-extrabold text-indigo-700">測驗結果報告</h2>
                                 <p class="text-xl text-gray-600 mt-2">為你的房仲職涯量身打造</p>
@@ -677,7 +677,7 @@
             const setupResultPageObserver = () => {
                 const navLinks = document.querySelectorAll('.result-nav-link[href^="#"]');
                 const topLink = document.getElementById('back-to-top-link');
-                const reportTop = document.getElementById('result-content');
+                const reportTop = document.getElementById('report-header');
                 const sections = [
                     document.getElementById('gemini-section'),
                     document.getElementById('share-section'),
@@ -1194,4 +1194,5 @@
     </script>
 </body>
 </html>
+
 
