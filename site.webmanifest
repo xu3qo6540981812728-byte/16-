@@ -1,5 +1,5 @@
 {
-    "name": "房仲新人16型人格測驗",
+    "name": "房仲16型人格測驗",
     "short_name": "房仲人格測驗",
     "icons": [
         {
@@ -16,4 +16,5 @@
     "theme_color": "#ffffff",
     "background_color": "#ffffff",
     "display": "standalone"
+
 }
