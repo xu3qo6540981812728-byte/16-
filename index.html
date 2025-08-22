@@ -258,7 +258,7 @@
             <div class="flex-grow flex items-center justify-center w-full">
                 <div class="p-8 bg-white rounded-xl shadow-2xl max-w-2xl w-full">
                     <h1 class="text-4xl font-extrabold text-indigo-700 mb-4">
-                        房仲新人16型人格測驗
+                        房仲16型人格測驗
                     </h1>
                     <p class="text-lg text-gray-600 mb-6 leading-relaxed">
                         這份問卷旨在幫助您探索在房仲工作上的個人風格偏好，作為職涯發展的參考。它並非嚴格的心理學診斷，測驗結果可能因您當下的心境與情境而異。
@@ -831,7 +831,7 @@
                 lucide.createIcons();
 
                 const report = resultReport;
-                const prompt = `你是一位資深的房仲職涯教練，語氣專業、誠懇且充滿鼓勵。一位新人剛剛完成了16型人格測驗，這是他的結果報告：\n- MBTI 類型: ${report.mbtiType}\n- 房仲人格標籤: ${report.type_name}\n- 優勢與潛力: ${report.strengthsText}\n- 潛在弱點與挑戰: ${report.weaknesses}\n- 建議的開發策略: ${report.client_strategy}\n- 建議的銷售策略: ${report.negotiation_strategy}\n- 建議的團隊協作方式: ${report.teamwork_suggestion}\n### 房仲超能力雷達圖分數 (滿分10分)\n- 開發力: ${report.superpowerScores['開發力']}\n- 談判力: ${report.superpowerScores['談判力']}\n- 服務力: ${report.superpowerScores['服務力']}\n- 分析力: ${report.superpowerScores['分析力']}\n- 抗壓力: ${report.superpowerScores['抗壓力']}\n\n基於以上所有報告，請為這位新人撰寫一份詳細、充滿鼓勵且具體的5年職涯發展計畫。請用繁體中文回答，並包含以下幾個部分，用 markdown 格式化，標題請用 '###'：\n1. **### 總體職涯定位與心態建議**: 根據他的性格，給予一個整體的職涯定位和成功心法。\n2.  **### 短期目標 (第1年)**: 列出3個具體的、可執行的目標，幫助他快速上手並建立信心。\n3.  **### 中期目標 (第2-3年)**: 提出2-3個進階目標，幫助他深化專業並建立個人品牌。\n4.  **### 長期目標 (第4-5年)**: 描繪一個長遠的發展藍圖，例如成為頂尖業務、團隊領導或特定領域的專家。\n5.  **### ✨ 你的專屬創意行銷點子 ✨**: 提供一個最符合他性格特質、與眾不同的創意行銷點子。\n6. **### 🚀 房仲超能力分析與提升建議**: 根據雷達圖分數，首先讚揚分數最高的1-2項能力，並說明這對他的職涯有何幫助。接著，找出分數最低的2項能力，用鼓勵的語氣，為這兩項能力各提供一個具體的、可立即執行的練習方法或學習建議，幫助他補強弱項。`;
+                const prompt = `你是一位資深的房仲職涯教練，語氣專業、誠懇且充滿鼓勵。一位夥伴剛剛完成了16型人格測驗，這是他的結果報告：\n- MBTI 類型: ${report.mbtiType}\n- 房仲人格標籤: ${report.type_name}\n- 優勢與潛力: ${report.strengthsText}\n- 潛在弱點與挑戰: ${report.weaknesses}\n- 建議的開發策略: ${report.client_strategy}\n- 建議的銷售策略: ${report.negotiation_strategy}\n- 建議的團隊協作方式: ${report.teamwork_suggestion}\n### 房仲超能力雷達圖分數 (滿分10分)\n- 開發力: ${report.superpowerScores['開發力']}\n- 談判力: ${report.superpowerScores['談判力']}\n- 服務力: ${report.superpowerScores['服務力']}\n- 分析力: ${report.superpowerScores['分析力']}\n- 抗壓力: ${report.superpowerScores['抗壓力']}\n\n基於以上所有報告，請為這位夥伴撰寫一份詳細、充滿鼓勵且具體的5年職涯發展計畫。請用繁體中文回答，並包含以下幾個部分，用 markdown 格式化，標題請用 '###'：\n1. **### 總體職涯定位與心態建議**: 根據他的性格，給予一個整體的職涯定位和成功心法。\n2.  **### 短期目標 (第1年)**: 列出3個具體的、可執行的目標，幫助他快速上手並建立信心。\n3.  **### 中期目標 (第2-3年)**: 提出2-3個進階目標，幫助他深化專業並建立個人品牌。\n4.  **### 長期目標 (第4-5年)**: 描繪一個長遠的發展藍圖，例如成為頂尖業務、團隊領導或特定領域的專家。\n5.  **### ✨ 你的專屬創意行銷點子 ✨**: 提供一個最符合他性格特質、與眾不同的創意行銷點子。\n6. **### 🚀 房仲超能力分析與提升建議**: 根據雷達圖分數，首先讚揚分數最高的1-2項能力，並說明這對他的職涯有何幫助。接著，找出分數最低的2項能力，用鼓勵的語氣，為這兩項能力各提供一個具體的、可立即執行的練習方法或學習建議，幫助他補強弱項。`;
                  
                 try {
                     const response = await fetch('/api/gemini', { 
@@ -1114,6 +1114,7 @@
     </script>
 </body>
 </html>
+
 
 
 
