@@ -149,7 +149,7 @@
 
         #floating-icons a {
             display: block;
-            transition: transform 0.2s ease-in-out; /* 加入滑鼠移過的動態效果 */
+            
         }
 
 
@@ -162,12 +162,15 @@
             background-color: white; /* 為透明背景的 icon 加上白色底 */
         }
 /* --- 僅在有滑鼠的設備上啟用 Hover 懸停效果 --- */
-        @media (hover: hover) and (pointer: fine) {
-            
-            /* 浮動按鈕的懸停效果 */
-            #floating-icons a:hover {
-                transform: scale(1.15); 
-            }
+       @media (hover: hover) and (pointer: fine) {
+
+    /* 浮動按鈕的懸停效果 */
+    #floating-icons a {
+        transition: transform 0.2s ease-in-out; /* <--- 把它貼到這裡 */
+    }
+    #floating-icons a:hover {
+        transform: scale(1.15); 
+    }
 
             /* 結果頁導覽列的懸停效果 */
             .result-nav-link:hover {
@@ -198,6 +201,11 @@
             #start-quiz-btn:hover {
                 transform: scale(1.05); /* 保留開始按鈕的放大效果 */
             }
+        }
+/* --- 修正：讓回到頂端按鈕的圖示變大 --- */
+        #back-to-top-btn i {
+            width: 30px;  /* 設定圖示寬度 */
+            height: 30px; /* 設定圖示高度 */
         }
     </style>
 </head>
@@ -1272,6 +1280,7 @@
     </script>
 </body>
 </html>
+
 
 
 
