@@ -136,12 +136,51 @@
         .splash-fade-out {
             opacity: 0 !important;
         }
+/* --- 浮動社群 Icon 樣式 --- */
+        #floating-icons {
+            position: fixed; /* 關鍵！讓元素固定在畫面上 */
+            top: 50%; /* 從頂部 50% 的位置開始 */
+            right: 20px; /* 距離右邊 20px */
+            transform: translateY(-50%); /* 向上移動自身高度的 50%，達成垂直置中 */
+            z-index: 99; /* 確保它在大部分內容之上 */
+            display: flex;
+            flex-direction: column; /* 讓 icon 垂直排列 */
+            gap: 1rem; /* 設定 icon 之間的間距 (16px) */
+        }
+
+        #floating-icons a {
+            display: block;
+            transition: transform 0.2s ease-in-out; /* 加入滑鼠移過的動態效果 */
+        }
+
+        #floating-icons a:hover {
+            transform: scale(1.15); /* 滑鼠移過時放大 15% */
+        }
+
+        #floating-icons img {
+            width: 50px;  /* 設定寬度 */
+            height: 50px; /* 設定高度 */
+            border-radius: 50%; /* 變成圓形 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 加上立體感的陰影 */
+            object-fit: cover; /* 確保圖片能填滿圓形而不變形 */
+            background-color: white; /* 為透明背景的 icon 加上白色底 */
+        }
     </style>
 </head>
 <body class="bg-gray-50">
     <div id="splash-screen" class="fixed inset-0 bg-black flex items-center justify-center z-[100]">
         <img id="splash-icon" src="/icons/Start-animation.GIF" alt="Logo" class="w-32 h-32">
-    </div>
+<div id="floating-icons">
+        <a href="https://line.me/ti/p/ueNu_ueXaV" target="_blank" rel="noopener noreferrer" title="加入 LINE 好友">
+            <img src="https://w7.pngwing.com/pngs/98/871/png-transparent-line-naver-internet-email-instant-messaging-app-text-trademark-logo.png" alt="LINE">
+        </a>
+        <a href="https://vocus.cc/salon/pagehouse" target="_blank" rel="noopener noreferrer" title="閱讀方格子部落格">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPBdtK6mN2ChHaxRzRm9FLn5GVTyG0sGWT3Q&s" alt="方格子">
+        </a>
+        <a href="https://linkgoods.com/pagehouse" target="_blank" rel="noopener noreferrer" title="查看電子名片">
+            <img src="https://images.icon-icons.com/1879/PNG/512/iconfinder-7-avatar-2754582_120519.png" alt="電子名片">
+        </a>   
+</div>
     <div id="loading-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50" style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center">
             <div class="loader mx-auto"></div>
@@ -1194,6 +1233,7 @@
     </script>
 </body>
 </html>
+
 
 
 
