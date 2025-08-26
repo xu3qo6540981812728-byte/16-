@@ -152,9 +152,6 @@
             transition: transform 0.2s ease-in-out; /* 加入滑鼠移過的動態效果 */
         }
 
-        #floating-icons a:hover {
-            transform: scale(1.15); /* 滑鼠移過時放大 15% */
-        }
 
         #floating-icons img {
             width: 50px;  /* 設定寬度 */
@@ -163,6 +160,44 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 加上立體感的陰影 */
             object-fit: cover; /* 確保圖片能填滿圓形而不變形 */
             background-color: white; /* 為透明背景的 icon 加上白色底 */
+        }
+/* --- 僅在有滑鼠的設備上啟用 Hover 懸停效果 --- */
+        @media (hover: hover) and (pointer: fine) {
+            
+            /* 浮動按鈕的懸停效果 */
+            #floating-icons a:hover {
+                transform: scale(1.15); 
+            }
+
+            /* 結果頁導覽列的懸停效果 */
+            .result-nav-link:hover {
+                background-color: #e0e7ff; /* indigo-100 */
+                color: #4338ca; /* indigo-700 */
+            }
+
+            /* 其他按鈕的懸停效果 (例如開始測驗按鈕) */
+            #start-quiz-btn:hover, 
+            .quiz-option:hover, 
+            #prev-btn:hover, 
+            #next-btn:hover, 
+            #submit-btn:hover,
+            #retake-btn:hover,
+            #gemini-analysis-btn:hover,
+            #generate-poster-btn:hover,
+            #generate-business-card-btn:hover,
+            #copy-share-btn:hover,
+            #download-poster-btn:hover,
+            #download-poster-btn-business:hover,
+            #show-share-text-btn:hover,
+            #copy-share-text-btn-2:hover,
+            #resume-btn:hover,
+            #start-new-btn:hover {
+                filter: brightness(1.1); /* 讓所有按鈕懸停時輕微變亮 */
+            }
+
+            #start-quiz-btn:hover {
+                transform: scale(1.05); /* 保留開始按鈕的放大效果 */
+            }
         }
     </style>
 </head>
@@ -1237,6 +1272,7 @@
     </script>
 </body>
 </html>
+
 
 
 
