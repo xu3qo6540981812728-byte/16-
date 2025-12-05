@@ -590,6 +590,9 @@
                         resumeModal.style.display = 'flex';
                     }
                 }
+                
+                // *** [移除] 這裡不再主動呼叫 setupFirebase() ***
+                // setupFirebase(); // 刪除此行或確保它不存在
             };
             const switchPage = (pageId) => {
                 document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
@@ -927,29 +930,42 @@
                 }
             };
             const handleStartQuiz = async () => {
-                // *** [新增] 強制 Google 登入檢查與執行 ***
+                showLoader('正在初始化連線...');
+                
+                // *** [修正核心] 確保 Firebase Auth 已初始化 ***
+                if (!auth) {
+                    try {
+                        await setupFirebase();
+                    } catch (e) {
+                        hideLoader();
+                        alert('Firebase 初始化失敗，請檢查設定。');
+                        return;
+                    }
+                }
+                
+                // *** [登入檢查與執行] ***
                 if (!user) {
-                    showLoader('請先登入 Google 帳號...');
+                    loadingText.textContent = '請先登入 Google 帳號...'; // 更新文字
                     try {
                         const provider = new window.firebase.GoogleAuthProvider();
                         // 執行 Google 彈出式登入
                         const result = await window.firebase.signInWithPopup(auth, provider);
                         user = result.user; // 更新 user 狀態
                         console.log("Google 登入成功:", user.displayName || user.email);
-                        hideLoader();
+                        // hideLoader(); // 移至後續邏輯結束時
                     } catch (error) {
                         hideLoader();
-                        // 處理登入錯誤，如用戶關閉彈窗
+                        // 處理登入錯誤
                         console.error("Google 登入失敗:", error);
                         alert('您需要登入 Google 才能開始測驗。');
                         return; // 登入失敗則中止測驗開始流程
                     }
                 }
-                // *** [新增] 登入成功或已登入後，才執行以下載入題目邏輯 ***
-
+                // *** [載入題目邏輯] ***
                 showLoader('正在準備題目...');
                 try {
                     const response = await fetch('/api/quiz?action=getQuestions');
+                    // ... (後續載入邏輯不變)
                     if (!response.ok) throw new Error('無法從伺服器獲取題目');
                     questions = await response.json();
                     
@@ -1268,28 +1284,37 @@
 
             // --- INITIALIZATION ---
             
-            const setupFirebase = async () => {
-                try {
-                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-                    if (Object.keys(firebaseConfig).length === 0) return;
-                    const app = window.firebase.initializeApp(firebaseConfig);
-                    auth = window.firebase.getAuth(app);
-                    db = window.firebase.getFirestore(app);
-                    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                    if (initialAuthToken) {
-                        await window.firebase.signInWithCustomToken(auth, initialAuthToken);
-                    } 
-                    // *** [刪除] 匿名登入邏輯 ***
-                    // else {
-                    //     await window.firebase.signInAnonymously(auth);
-                    // }
-                    
-                    window.firebase.onAuthStateChanged(auth, (currentUser) => {
-                        if (currentUser) user = currentUser;
-                    });
-                } catch (error) {
-                    console.error("Firebase initialization failed:", error);
-                }
+           const setupFirebase = async () => {
+                return new Promise(async (resolve, reject) => {
+                    try {
+                        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                        if (Object.keys(firebaseConfig).length === 0) return resolve(); // 無配置直接返回
+                        const app = window.firebase.initializeApp(firebaseConfig);
+                        auth = window.firebase.getAuth(app);
+                        db = window.firebase.getFirestore(app);
+                        
+                        // 使用 onAuthStateChanged 確保初始化完成，並獲取最新的 user 狀態
+                        const unsubscribe = window.firebase.onAuthStateChanged(auth, (currentUser) => {
+                            if (currentUser) user = currentUser;
+                            // 無論登入與否，初始化流程完成，解除監聽並解決 Promise
+                            unsubscribe();
+                            resolve(); 
+                        });
+                        
+                        // 處理 custom token 的情況 (如果有的話)
+                        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                        if (initialAuthToken) {
+                            await window.firebase.signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            // 如果沒有 Custom Token，直接讓 onAuthStateChanged 處理初始狀態
+                            // 這裡不需要額外操作，等待 onAuthStateChanged resolve 即可
+                        }
+                        
+                    } catch (error) {
+                        console.error("Firebase initialization failed:", error);
+                        reject(error);
+                    }
+                });
             };
             
             startQuizBtn.addEventListener('click', handleStartQuiz);
@@ -1335,6 +1360,7 @@
     </script>
 </body>
 </html>
+
 
 
 
