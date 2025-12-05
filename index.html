@@ -23,12 +23,12 @@
 
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    // --- 修改這裡：新增 GoogleAuthProvider 和 signInWithPopup ---
+    // *** 請將下一行替換成這個新的引入方式 ***
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     window.firebase = {
         initializeApp, 
-        // --- 修改這裡：新增 GoogleAuthProvider 和 signInWithPopup ---
+        // *** 請將下一行替換成這個新的匯出方式 ***
         getAuth, signInAnonymously, signInWithCustomToken,
         onAuthStateChanged, getFirestore, doc, setDoc,
         GoogleAuthProvider, signInWithPopup // <--- 新增
@@ -942,14 +942,19 @@
     }
 };
             const handleStartQuiz = async () => {
-    const signedIn = await handleGoogleSignIn(); // <--- 先處理登入
-    if (!signedIn) return; // 如果登入失敗，則停止
+    // 1. 強制登入 Google
+    const signedIn = await handleGoogleSignIn(); 
+    if (!signedIn) return; // 如果登入失敗（例如使用者關閉彈窗），則停止執行
 
     showLoader('正在準備題目...');
     try {
+        // 2. 取得題目
         const response = await fetch('/api/quiz?action=getQuestions');
-        // ... (其餘邏輯不變)
-        // ...
+        if (!response.ok) throw new Error('無法從伺服器獲取題目');
+        
+        // *** 修正：將取得的題目賦值給全域變數 questions ***
+        questions = await response.json(); 
+        
         if (questions && questions.length > 0) {
             switchPage('quiz-page');
             renderQuiz();
@@ -1313,6 +1318,7 @@
     </script>
 </body>
 </html>
+
 
 
 
