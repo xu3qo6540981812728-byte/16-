@@ -1000,22 +1000,17 @@
                     resultReport = await response.json();
                     saveResult(resultReport);
                     
-                    // 2. 顯示結果
+                    // 2. 顯示結果 (讓使用者立刻看到報告)
                     switchPage('result-page');
                     renderResult();
 
-                    // 3. 儲存資料 (這裡很容易出錯)
-                    console.log("準備儲存資料..."); // Debug log
-                    console.log("User 狀態:", user); // Debug log
-                    console.log("DB 狀態:", db);   // Debug log
-
+                    // 3. 背景靜默儲存資料
                     if (user && db) {
                         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         const userId = user.uid; 
                         
                         const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
                         
-                        // *** [修正點] 注意這裡的 quizRawAnswers 改成了 answers ***
                         const dataToSave = {
                             mbtiType: resultReport.mbtiType,
                             type_name: resultReport.type_name,
@@ -1023,29 +1018,21 @@
                             displayName: user.displayName || 'Guest',
                             email: user.email || 'N/A',
                             photoURL: user.photoURL || '',
-                            quizRawAnswers: answers, // <--- 這裡是關鍵修正
+                            quizRawAnswers: answers, 
                             quizScore: resultReport.scoreDetails || {}, 
                             firebaseUid: user.uid 
                         };
 
-                        console.log("正在寫入 Firestore...", dataToSave);
-                        
+                        // 執行寫入 (await 確保寫入完成，但移除所有成功通知)
                         await window.firebase.setDoc(userRef, dataToSave);
                         
-                        console.log("🎉 資料儲存成功！");
-                        alert("測驗結果與帳號資料已成功備份！"); // 成功提示
-                    } else {
-                        console.error("❌ 無法儲存：使用者未登入或 DB 未連接");
+                        // *** [修改] 這裡原本的 alert 和 console.log 都移除了 ***
+                        // 程式會安靜地結束，不打擾使用者
                     }
 
                 } catch (error) {
-                    console.error("❌ 發生錯誤:", error);
-                    // 這裡會告訴你是權限錯誤還是變數錯誤
-                    if (error.code === 'permission-denied') {
-                        alert("儲存失敗：資料庫權限不足 (請檢查 Firestore Rules)");
-                    } else {
-                        console.log("背景存檔發生問題，但結果已顯示");
-                    }
+                    // 只有發生嚴重錯誤時才在後台紀錄，但不影響使用者看報告
+                    console.error("背景存檔發生錯誤 (不影響報告顯示):", error);
                 } finally {
                     hideLoader();
                 }
@@ -1387,6 +1374,7 @@
     </script>
 </body>
 </html>
+
 
 
 
