@@ -930,43 +930,42 @@
                 }
             };
             const handleStartQuiz = async () => {
-                showLoader('正在初始化連線...');
+                showLoader('正在連接伺服器...');
                 
-                // *** [修正核心] 確保 Firebase Auth 已初始化 ***
+                // 1. 檢查並確保 Firebase 已初始化
                 if (!auth) {
                     try {
-                        await setupFirebase();
+                        await setupFirebase(); // 等待初始化完成
                     } catch (e) {
                         hideLoader();
-                        alert('Firebase 初始化失敗，請檢查設定。');
+                        alert('無法連接到資料庫，請檢查您的網路或 Firebase 設定。');
                         return;
                     }
                 }
-                
-                // *** [登入檢查與執行] ***
+
+                // 2. 檢查登入狀態
                 if (!user) {
-                    loadingText.textContent = '請先登入 Google 帳號...'; // 更新文字
+                    loadingText.textContent = '請登入 Google 帳號...';
                     try {
                         const provider = new window.firebase.GoogleAuthProvider();
                         // 執行 Google 彈出式登入
                         const result = await window.firebase.signInWithPopup(auth, provider);
-                        user = result.user; // 更新 user 狀態
-                        console.log("Google 登入成功:", user.displayName || user.email);
-                        // hideLoader(); // 移至後續邏輯結束時
+                        user = result.user;
+                        console.log("Google 登入成功:", user.displayName);
                     } catch (error) {
                         hideLoader();
-                        // 處理登入錯誤
                         console.error("Google 登入失敗:", error);
-                        alert('您需要登入 Google 才能開始測驗。');
-                        return; // 登入失敗則中止測驗開始流程
+                        alert('必須登入 Google 帳號才能開始測驗。');
+                        return;
                     }
                 }
-                // *** [載入題目邏輯] ***
+
+                // 3. 登入成功，開始載入題目
                 showLoader('正在準備題目...');
                 try {
                     const response = await fetch('/api/quiz?action=getQuestions');
-                    // ... (後續載入邏輯不變)
                     if (!response.ok) throw new Error('無法從伺服器獲取題目');
+                    
                     questions = await response.json();
                     
                     if (questions && questions.length > 0) {
@@ -977,7 +976,7 @@
                     }
                 } catch (error) {
                     console.error("Failed to load questions:", error);
-                    alert('抱歉，載入題目時發生錯誤，請稍後再試。');
+                    alert('載入題目時發生錯誤，請稍後再試。');
                 } finally {
                     hideLoader();
                 }
@@ -1371,6 +1370,7 @@
     </script>
 </body>
 </html>
+
 
 
 
