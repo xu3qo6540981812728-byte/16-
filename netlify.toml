@@ -1,10 +1,17 @@
+# --- 現有的設定 (保留不動) ---
 [build]
-  # This tells Netlify where your functions are located.
   functions = "netlify/functions"
 
-# This rule makes your functions accessible through a cleaner URL.
-# For example, requests to /api/quiz will be routed to /.netlify/functions/quiz
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
+
+# --- 新增這段 Headers 設定 ---
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # 這行是關鍵：允許與彈出視窗進行互動
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+    # 這行是為了確保相容性
+    Cross-Origin-Embedder-Policy = "unsafe-none"
