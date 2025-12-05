@@ -22,14 +22,29 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        window.firebase = {
-            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
-            onAuthStateChanged, getFirestore, doc, setDoc
-        };
-    </script>
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+        getAuth, 
+        // 刪除 signInAnonymously
+        signInWithCustomToken, 
+        onAuthStateChanged,
+        // *** [新增] 引入 Google 登入方法和 Provider ***
+        signInWithPopup, 
+        GoogleAuthProvider 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+    // *** [修改] 將新的方法加入 window.firebase 供全域使用 ***
+    window.firebase = {
+        initializeApp, getAuth, 
+        // 刪除 signInAnonymously
+        signInWithCustomToken,
+        onAuthStateChanged, getFirestore, doc, setDoc,
+        // *** [新增] ***
+        signInWithPopup, 
+        GoogleAuthProvider 
+    };
+</script>
 
     <style>
     html {
@@ -912,6 +927,26 @@
                 }
             };
             const handleStartQuiz = async () => {
+                // *** [新增] 強制 Google 登入檢查與執行 ***
+                if (!user) {
+                    showLoader('請先登入 Google 帳號...');
+                    try {
+                        const provider = new window.firebase.GoogleAuthProvider();
+                        // 執行 Google 彈出式登入
+                        const result = await window.firebase.signInWithPopup(auth, provider);
+                        user = result.user; // 更新 user 狀態
+                        console.log("Google 登入成功:", user.displayName || user.email);
+                        hideLoader();
+                    } catch (error) {
+                        hideLoader();
+                        // 處理登入錯誤，如用戶關閉彈窗
+                        console.error("Google 登入失敗:", error);
+                        alert('您需要登入 Google 才能開始測驗。');
+                        return; // 登入失敗則中止測驗開始流程
+                    }
+                }
+                // *** [新增] 登入成功或已登入後，才執行以下載入題目邏輯 ***
+
                 showLoader('正在準備題目...');
                 try {
                     const response = await fetch('/api/quiz?action=getQuestions');
@@ -948,16 +983,33 @@
                     
                     switchPage('result-page');
                     renderResult();
-                    if (user && db) {
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                        const userId = user.uid || crypto.randomUUID();
-                        const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
-                        await window.firebase.setDoc(userRef, {
-                            mbtiType: resultReport.mbtiType,
-                            type_name: resultReport.type_name,
-                            timestamp: new Date().toISOString(),
-                        });
-                    }
+                   if (user && db) {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    
+                    // 因為您已經強制 Google 登入，所以 user.uid 必定是使用者唯一的 ID
+                    const userId = user.uid; 
+                    
+                    const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
+                    
+                    // 這裡就是將結果和使用者資料儲存到 Firestore 的地方
+                    await window.firebase.setDoc(userRef, {
+                        mbtiType: resultReport.mbtiType,
+                        type_name: resultReport.type_name,
+                        timestamp: new Date().toISOString(),
+                        
+                        // *** [新增：Google 登入自動收集的資料] ***
+                        displayName: user.displayName, // 收集使用者姓名
+                        email: user.email,             // 收集使用者 Email
+                        photoURL: user.photoURL,       // 收集使用者頭像連結 (可選)
+                        
+                        // 將測驗結果也一併存入
+                        quizScore: resultReport.score, // 假設您的結果物件有 score
+                        quizRawAnswers: currentAnswers, // 儲存使用者原始答案 (可選)
+                        
+                        // 讓您知道這是哪個 Firebase 帳號
+                        firebaseUid: user.uid 
+                    });
+                }
 
                 } catch (error) {
                     console.error("Failed to submit and get result:", error);
@@ -1226,9 +1278,12 @@
                     const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
                     if (initialAuthToken) {
                         await window.firebase.signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await window.firebase.signInAnonymously(auth);
-                    }
+                    } 
+                    // *** [刪除] 匿名登入邏輯 ***
+                    // else {
+                    //     await window.firebase.signInAnonymously(auth);
+                    // }
+                    
                     window.firebase.onAuthStateChanged(auth, (currentUser) => {
                         if (currentUser) user = currentUser;
                     });
@@ -1280,6 +1335,7 @@
     </script>
 </body>
 </html>
+
 
 
 
