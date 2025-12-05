@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>房仲16型人格測驗</title>
@@ -1255,25 +1259,12 @@
             
             const setupFirebase = async () => {
     try {
-        // *** 嘗試直接讀取全局變數，不進行 JSON.parse (假設 Netlify 已經處理好) ***
-        // 如果 Netlify 注入的是 JSON 物件，它會成功；如果是字串，它可能會失敗。
-        // 我們用一個簡單的判斷來嘗試解決這個邊界問題。
-        let firebaseConfig = null;
-        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-             // 嘗試解析 JSON 字串
-             try {
-                 firebaseConfig = JSON.parse(__firebase_config);
-             } catch (e) {
-                 // 如果解析失敗，表示它可能已經是一個物件 (在某些建置流程中)
-                 firebaseConfig = __firebase_config; 
-             }
-        }
+        // 現在我們相信 __firebase_config 已經被 Netlify 注入了
+        // 如果未注入，這行會報錯，但因為我們已經設定了 Build Command，應能成功
+        const firebaseConfig = JSON.parse(__firebase_config);
         
-        // 關鍵檢查：如果沒有 API Key，則初始化失敗
-        if (!firebaseConfig || !firebaseConfig.apiKey) {
-            console.error("Firebase Config missing or incomplete. Check Netlify Environment Variables or build command."); // <-- 錯誤訊息仍會出現，但我們知道原因了
-            return;
-        }
+        // 為了避免重複的錯誤處理，移除原來的 if 判斷
+        // if (!firebaseConfig || !firebaseConfig.apiKey) { ... } 
         
         const app = window.firebase.initializeApp(firebaseConfig);
         auth = window.firebase.getAuth(app);
@@ -1288,7 +1279,8 @@
         });
         
     } catch (error) {
-        console.error("Firebase initialization failed:", error);
+        console.error("Firebase initialization failed! Please check Netlify Build Command and Config:", error);
+        alert("抱歉，應用程式初始化失敗，請聯絡管理員。"); // 失敗時提醒使用者
     }
 };
             
@@ -1335,6 +1327,7 @@
     </script>
 </body>
 </html>
+
 
 
 
