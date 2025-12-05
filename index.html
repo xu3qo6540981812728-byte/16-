@@ -22,15 +22,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        window.firebase = {
-            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
-            onAuthStateChanged, getFirestore, doc, setDoc
-        };
-    </script>
-
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    // --- 修改這裡：新增 GoogleAuthProvider 和 signInWithPopup ---
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    window.firebase = {
+        initializeApp, 
+        // --- 修改這裡：新增 GoogleAuthProvider 和 signInWithPopup ---
+        getAuth, signInAnonymously, signInWithCustomToken,
+        onAuthStateChanged, getFirestore, doc, setDoc,
+        GoogleAuthProvider, signInWithPopup // <--- 新增
+    };
+</script>
     <style>
     html {
         scroll-behavior: smooth;
@@ -561,21 +564,24 @@
                     }
                 }
             };
-            const initializeQuiz = () => {
-                const savedResult = localStorage.getItem('mbtiQuizResult');
-                const savedProgress = localStorage.getItem('mbtiQuizProgress');
+            const initializeQuizAndCheckProgress = () => {
+    const savedResult = localStorage.getItem('mbtiQuizResult');
+    const savedProgress = localStorage.getItem('mbtiQuizProgress');
 
-                if (savedResult) {
-                    resultReport = JSON.parse(savedResult);
-                    switchPage('result-page');
-                    renderResult();
-                } else if (savedProgress) {
-                    const { answers: savedAnswers } = JSON.parse(savedProgress);
-                    if (savedAnswers && Object.keys(savedAnswers).length > 0) {
-                        resumeModal.style.display = 'flex';
-                    }
-                }
-            };
+    // 檢查是否有儲存結果
+    if (savedResult) {
+        resultReport = JSON.parse(savedResult);
+        switchPage('result-page');
+        renderResult();
+    } 
+    // 檢查是否有儲存進度
+    else if (savedProgress) {
+        const { answers: savedAnswers } = JSON.parse(savedProgress);
+        if (savedAnswers && Object.keys(savedAnswers).length > 0) {
+            resumeModal.style.display = 'flex'; // 彈出繼續測驗的視窗
+        }
+    }
+};
             const switchPage = (pageId) => {
                 document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
                 document.getElementById(pageId).classList.add('active');
@@ -911,26 +917,52 @@
                     saveProgress();
                 }
             };
+            const handleGoogleSignIn = async () => {
+    if (user) {
+        // 如果已經登入（無論是匿名還是 Google），則直接跳過登入步驟
+        console.log("User already signed in:", user.uid);
+        return true;
+    }
+
+    showLoader('正在跳轉 Google 登入...');
+    try {
+        const provider = new window.firebase.GoogleAuthProvider();
+        const result = await window.firebase.signInWithPopup(auth, provider);
+        user = result.user; // 更新 user 狀態
+        console.log("Google Sign In successful. User ID:", user.uid);
+        hideLoader();
+        return true;
+    } catch (error) {
+        hideLoader();
+        console.error("Google Sign In failed:", error.code, error.message);
+        if (error.code !== 'auth/popup-closed-by-user') {
+            alert(`登入失敗，請稍後再試。錯誤: ${error.message}`);
+        }
+        return false;
+    }
+};
             const handleStartQuiz = async () => {
-                showLoader('正在準備題目...');
-                try {
-                    const response = await fetch('/api/quiz?action=getQuestions');
-                    if (!response.ok) throw new Error('無法從伺服器獲取題目');
-                    questions = await response.json();
-                    
-                    if (questions && questions.length > 0) {
-                        switchPage('quiz-page');
-                        renderQuiz();
-                    } else {
-                        throw new Error('題目資料格式不正確');
-                    }
-                } catch (error) {
-                    console.error("Failed to load questions:", error);
-                    alert('抱歉，載入題目時發生錯誤，請稍後再試。');
-                } finally {
-                    hideLoader();
-                }
-            };
+    const signedIn = await handleGoogleSignIn(); // <--- 先處理登入
+    if (!signedIn) return; // 如果登入失敗，則停止
+
+    showLoader('正在準備題目...');
+    try {
+        const response = await fetch('/api/quiz?action=getQuestions');
+        // ... (其餘邏輯不變)
+        // ...
+        if (questions && questions.length > 0) {
+            switchPage('quiz-page');
+            renderQuiz();
+        } else {
+            throw new Error('題目資料格式不正確');
+        }
+    } catch (error) {
+        console.error("Failed to load questions:", error);
+        alert('抱歉，載入題目時發生錯誤，請稍後再試。');
+    } finally {
+        hideLoader();
+    }
+};
             const handleSubmit = async () => {
                 showLoader('正在為您分析報告...');
                 clearProgress();
@@ -1217,25 +1249,26 @@
             // --- INITIALIZATION ---
             
             const setupFirebase = async () => {
-                try {
-                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-                    if (Object.keys(firebaseConfig).length === 0) return;
-                    const app = window.firebase.initializeApp(firebaseConfig);
-                    auth = window.firebase.getAuth(app);
-                    db = window.firebase.getFirestore(app);
-                    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                    if (initialAuthToken) {
-                        await window.firebase.signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await window.firebase.signInAnonymously(auth);
-                    }
-                    window.firebase.onAuthStateChanged(auth, (currentUser) => {
-                        if (currentUser) user = currentUser;
-                    });
-                } catch (error) {
-                    console.error("Firebase initialization failed:", error);
-                }
-            };
+    try {
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        if (Object.keys(firebaseConfig).length === 0) return;
+        const app = window.firebase.initializeApp(firebaseConfig);
+        auth = window.firebase.getAuth(app);
+        db = window.firebase.getFirestore(app);
+        
+        // 移除原有的 signInAnonymously 和 signInWithCustomToken 邏輯
+        
+        window.firebase.onAuthStateChanged(auth, (currentUser) => {
+            if (currentUser) {
+                user = currentUser;
+                // 在這裡可以加入檢查是否有未完成的測驗或已完成的結果
+                initializeQuizAndCheckProgress(); // <--- 新增一個步驟三的函式來處理
+            }
+        });
+    } catch (error) {
+        console.error("Firebase initialization failed:", error);
+    }
+};
             
             startQuizBtn.addEventListener('click', handleStartQuiz);
             nextBtn.addEventListener('click', handleNext);
@@ -1275,11 +1308,12 @@
             
             lucide.createIcons();
             setupFirebase();
-            initializeQuiz();
+            
         });
     </script>
 </body>
 </html>
+
 
 
 
