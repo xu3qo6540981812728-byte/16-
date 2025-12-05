@@ -21,7 +21,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+    <script>
+    const __firebase_config = {
+        "apiKey": "AIzaSyD-spPMO3Vv6SOT6crmww5s2KSvsBaCx44",
+        "authDomain": "realestatequiz-39998.firebaseapp.com",
+        "projectId": "realestatequiz-39998",
+        "storageBucket": "realestatequiz-39998.firebasestorage.app",
+        "messagingSenderId": "233059840274",
+        "appId": "1:233059840274:web:45e3f65177bcaf277d83cb",
+        "measurementId": "G-TW3MHPM0SM"
+    };
+    </script>
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     // *** 請將下一行替換成這個新的引入方式 ***
@@ -1254,16 +1266,16 @@
 
             // --- INITIALIZATION ---
             
-            const setupFirebase = async () => {
+          const setupFirebase = async () => {
+    // 由於已硬寫入配置，這裡直接使用全局變數 __firebase_config
+    if (!__firebase_config || !__firebase_config.apiKey) {
+        console.error("Firebase Config is missing or incomplete in the hardcoded script.");
+        alert("錯誤：Firebase 設定遺失，請聯絡網站管理員。");
+        return;
+    }
+    
     try {
-        // 現在我們相信 __firebase_config 已經被 Netlify 注入了
-        // 如果未注入，這行會報錯，但因為我們已經設定了 Build Command，應能成功
-        const firebaseConfig = JSON.parse(__firebase_config);
-        
-        // 為了避免重複的錯誤處理，移除原來的 if 判斷
-        // if (!firebaseConfig || !firebaseConfig.apiKey) { ... } 
-        
-        const app = window.firebase.initializeApp(firebaseConfig);
+        const app = window.firebase.initializeApp(__firebase_config);
         auth = window.firebase.getAuth(app);
         db = window.firebase.getFirestore(app);
         
@@ -1276,8 +1288,8 @@
         });
         
     } catch (error) {
-        console.error("Firebase initialization failed! Please check Netlify Build Command and Config:", error);
-        alert("抱歉，應用程式初始化失敗，請聯絡管理員。"); // 失敗時提醒使用者
+        console.error("Firebase initialization failed:", error);
+        alert("抱歉，Firebase 服務連線失敗，請稍後再試。");
     }
 };
             
@@ -1324,6 +1336,7 @@
     </script>
 </body>
 </html>
+
 
 
 
