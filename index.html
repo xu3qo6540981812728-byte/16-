@@ -941,10 +941,10 @@
         return false;
     }
 };
-            const handleStartQuiz = async () => {
+           const handleStartQuiz = async () => {
     // 1. 強制登入 Google
     const signedIn = await handleGoogleSignIn(); 
-    if (!signedIn) return; // 如果登入失敗（例如使用者關閉彈窗），則停止執行
+    if (!signedIn) return; // 如果登入失敗，則停止執行
 
     showLoader('正在準備題目...');
     try {
@@ -952,7 +952,7 @@
         const response = await fetch('/api/quiz?action=getQuestions');
         if (!response.ok) throw new Error('無法從伺服器獲取題目');
         
-        // *** 修正：將取得的題目賦值給全域變數 questions ***
+        // *** 關鍵修正：將取得的題目賦值給全域變數 questions ***
         questions = await response.json(); 
         
         if (questions && questions.length > 0) {
@@ -1255,23 +1255,31 @@
             
             const setupFirebase = async () => {
     try {
+        // 嘗試讀取 Netlify 注入的環境變數
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        if (Object.keys(firebaseConfig).length === 0) return;
+        
+        // *** 關鍵檢查：如果沒有 API Key，則初始化失敗 ***
+        if (!firebaseConfig || !firebaseConfig.apiKey) {
+            console.error("Firebase Config missing or incomplete. Check Netlify Environment Variables.");
+            return; // 終止執行，auth 保持 null
+        }
+        
         const app = window.firebase.initializeApp(firebaseConfig);
         auth = window.firebase.getAuth(app);
         db = window.firebase.getFirestore(app);
         
-        // 移除原有的 signInAnonymously 和 signInWithCustomToken 邏輯
-        
+        // 監聽登入狀態
         window.firebase.onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
                 user = currentUser;
-                // 在這裡可以加入檢查是否有未完成的測驗或已完成的結果
-                initializeQuizAndCheckProgress(); // <--- 新增一個步驟三的函式來處理
+                initializeQuizAndCheckProgress();
             }
         });
+        
     } catch (error) {
+        // 如果 JSON.parse 失敗，也會導致錯誤
         console.error("Firebase initialization failed:", error);
+        // 如果這裡失敗，auth 仍為 null
     }
 };
             
@@ -1318,6 +1326,7 @@
     </script>
 </body>
 </html>
+
 
 
 
