@@ -989,7 +989,7 @@
                 clearProgress();
 
                 try {
-                    // 1. 計算結果 (API 呼叫)
+                    // 1. 計算結果
                     const response = await fetch('/api/quiz?action=calculateResult', { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1000,45 +1000,52 @@
                     resultReport = await response.json();
                     saveResult(resultReport);
                     
-                    // 2. 顯示報告 (這裡成功執行，所以您看得到畫面)
+                    // 2. 顯示結果
                     switchPage('result-page');
                     renderResult();
 
-                    // 3. 儲存到 Firestore (錯誤發生在這裡)
+                    // 3. 儲存資料 (這裡很容易出錯)
+                    console.log("準備儲存資料..."); // Debug log
+                    console.log("User 狀態:", user); // Debug log
+                    console.log("DB 狀態:", db);   // Debug log
+
                     if (user && db) {
                         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         const userId = user.uid; 
                         
                         const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
                         
-                        await window.firebase.setDoc(userRef, {
+                        // *** [修正點] 注意這裡的 quizRawAnswers 改成了 answers ***
+                        const dataToSave = {
                             mbtiType: resultReport.mbtiType,
                             type_name: resultReport.type_name,
                             timestamp: new Date().toISOString(),
-                            
-                            // 使用者資訊
                             displayName: user.displayName || 'Guest',
                             email: user.email || 'N/A',
                             photoURL: user.photoURL || '',
-                            
-                            // *** [修正] 這裡原本寫錯了 ***
-                            // 使用 answers (正確變數) 而不是 currentAnswers (不存在的變數)
-                            quizRawAnswers: answers, 
-                            
-                            // *** [修正] 分數欄位名稱修正 ***
-                            // 後端回傳的是 scoreDetails 而不是 score
+                            quizRawAnswers: answers, // <--- 這裡是關鍵修正
                             quizScore: resultReport.scoreDetails || {}, 
-                            
                             firebaseUid: user.uid 
-                        });
-                        console.log("資料儲存成功！");
+                        };
+
+                        console.log("正在寫入 Firestore...", dataToSave);
+                        
+                        await window.firebase.setDoc(userRef, dataToSave);
+                        
+                        console.log("🎉 資料儲存成功！");
+                        alert("測驗結果與帳號資料已成功備份！"); // 成功提示
+                    } else {
+                        console.error("❌ 無法儲存：使用者未登入或 DB 未連接");
                     }
 
                 } catch (error) {
-                    console.error("Failed to submit and get result:", error);
-                    // 因為報告已經顯示了，這裡的 Alert 確實會讓使用者困惑
-                    // 建議可以改成只在 Console 報錯，或是提示「存檔失敗但不影響結果」
-                    console.warn('結果已顯示，但背景存檔發生問題');
+                    console.error("❌ 發生錯誤:", error);
+                    // 這裡會告訴你是權限錯誤還是變數錯誤
+                    if (error.code === 'permission-denied') {
+                        alert("儲存失敗：資料庫權限不足 (請檢查 Firestore Rules)");
+                    } else {
+                        console.log("背景存檔發生問題，但結果已顯示");
+                    }
                 } finally {
                     hideLoader();
                 }
@@ -1380,6 +1387,7 @@
     </script>
 </body>
 </html>
+
 
 
 
