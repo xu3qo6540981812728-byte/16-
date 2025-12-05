@@ -989,6 +989,7 @@
                 clearProgress();
 
                 try {
+                    // 1. 計算結果 (API 呼叫)
                     const response = await fetch('/api/quiz?action=calculateResult', { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -999,39 +1000,45 @@
                     resultReport = await response.json();
                     saveResult(resultReport);
                     
+                    // 2. 顯示報告 (這裡成功執行，所以您看得到畫面)
                     switchPage('result-page');
                     renderResult();
-                   if (user && db) {
-                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                    
-                    // 因為您已經強制 Google 登入，所以 user.uid 必定是使用者唯一的 ID
-                    const userId = user.uid; 
-                    
-                    const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
-                    
-                    // 這裡就是將結果和使用者資料儲存到 Firestore 的地方
-                    await window.firebase.setDoc(userRef, {
-                        mbtiType: resultReport.mbtiType,
-                        type_name: resultReport.type_name,
-                        timestamp: new Date().toISOString(),
+
+                    // 3. 儲存到 Firestore (錯誤發生在這裡)
+                    if (user && db) {
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        const userId = user.uid; 
                         
-                        // *** [新增：Google 登入自動收集的資料] ***
-                        displayName: user.displayName, // 收集使用者姓名
-                        email: user.email,             // 收集使用者 Email
-                        photoURL: user.photoURL,       // 收集使用者頭像連結 (可選)
+                        const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
                         
-                        // 將測驗結果也一併存入
-                        quizScore: resultReport.score, // 假設您的結果物件有 score
-                        quizRawAnswers: currentAnswers, // 儲存使用者原始答案 (可選)
-                        
-                        // 讓您知道這是哪個 Firebase 帳號
-                        firebaseUid: user.uid 
-                    });
-                }
+                        await window.firebase.setDoc(userRef, {
+                            mbtiType: resultReport.mbtiType,
+                            type_name: resultReport.type_name,
+                            timestamp: new Date().toISOString(),
+                            
+                            // 使用者資訊
+                            displayName: user.displayName || 'Guest',
+                            email: user.email || 'N/A',
+                            photoURL: user.photoURL || '',
+                            
+                            // *** [修正] 這裡原本寫錯了 ***
+                            // 使用 answers (正確變數) 而不是 currentAnswers (不存在的變數)
+                            quizRawAnswers: answers, 
+                            
+                            // *** [修正] 分數欄位名稱修正 ***
+                            // 後端回傳的是 scoreDetails 而不是 score
+                            quizScore: resultReport.scoreDetails || {}, 
+                            
+                            firebaseUid: user.uid 
+                        });
+                        console.log("資料儲存成功！");
+                    }
 
                 } catch (error) {
                     console.error("Failed to submit and get result:", error);
-                    alert('抱歉，提交答案時發生錯誤，請稍後再試。');
+                    // 因為報告已經顯示了，這裡的 Alert 確實會讓使用者困惑
+                    // 建議可以改成只在 Console 報錯，或是提示「存檔失敗但不影響結果」
+                    console.warn('結果已顯示，但背景存檔發生問題');
                 } finally {
                     hideLoader();
                 }
@@ -1373,6 +1380,7 @@
     </script>
 </body>
 </html>
+
 
 
 
