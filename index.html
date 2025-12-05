@@ -22,25 +22,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    // 1. 引入 getApps 和 getApp
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { 
         getAuth, 
-        // 刪除 signInAnonymously
         signInWithCustomToken, 
         onAuthStateChanged,
-        // *** [新增] 引入 Google 登入方法和 Provider ***
         signInWithPopup, 
         GoogleAuthProvider 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    // *** [修改] 將新的方法加入 window.firebase 供全域使用 ***
+    // 2. 將它們加入 window.firebase 物件，這樣 setupFirebase 才能讀取到
     window.firebase = {
-        initializeApp, getAuth, 
-        // 刪除 signInAnonymously
+        initializeApp, 
+        getApps, // *** [補上這個] ***
+        getApp,  // *** [補上這個] ***
+        getAuth, 
         signInWithCustomToken,
-        onAuthStateChanged, getFirestore, doc, setDoc,
-        // *** [新增] ***
+        onAuthStateChanged, 
+        getFirestore, 
+        doc, 
+        setDoc,
         signInWithPopup, 
         GoogleAuthProvider 
     };
@@ -1370,6 +1373,7 @@
     </script>
 </body>
 </html>
+
 
 
 
