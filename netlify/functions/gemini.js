@@ -24,7 +24,8 @@ exports.handler = async (event, context) => {
         }
 
         // 3. 呼叫 Google Gemini API
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // 改用 -latest 後綴，這是目前最穩定的版本別名
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
         
         const payload = {
             contents: [{
@@ -71,3 +72,4 @@ exports.handler = async (event, context) => {
         };
     }
 };
+
