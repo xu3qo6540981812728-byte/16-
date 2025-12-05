@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-   
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>房仲16型人格測驗</title>
@@ -21,32 +20,17 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    <script>
-    const __firebase_config = {
-        "apiKey": "AIzaSyD-spPMO3Vv6SOT6crmww5s2KSvsBaCx44",
-        "authDomain": "realestatequiz-39998.firebaseapp.com",
-        "projectId": "realestatequiz-39998",
-        "storageBucket": "realestatequiz-39998.firebasestorage.app",
-        "messagingSenderId": "233059840274",
-        "appId": "1:233059840274:web:45e3f65177bcaf277d83cb",
-        "measurementId": "G-TW3MHPM0SM"
-    };
-    </script>
     <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    // *** 請將下一行替換成這個新的引入方式 ***
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    window.firebase = {
-        initializeApp, 
-        // *** 請將下一行替換成這個新的匯出方式 ***
-        getAuth, signInAnonymously, signInWithCustomToken,
-        onAuthStateChanged, getFirestore, doc, setDoc,
-        GoogleAuthProvider, signInWithPopup // <--- 新增
-    };
-</script>
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        window.firebase = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
+            onAuthStateChanged, getFirestore, doc, setDoc
+        };
+    </script>
+
     <style>
     html {
         scroll-behavior: smooth;
@@ -577,24 +561,21 @@ script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas
                     }
                 }
             };
-            const initializeQuizAndCheckProgress = () => {
-    const savedResult = localStorage.getItem('mbtiQuizResult');
-    const savedProgress = localStorage.getItem('mbtiQuizProgress');
+            const initializeQuiz = () => {
+                const savedResult = localStorage.getItem('mbtiQuizResult');
+                const savedProgress = localStorage.getItem('mbtiQuizProgress');
 
-    // 檢查是否有儲存結果
-    if (savedResult) {
-        resultReport = JSON.parse(savedResult);
-        switchPage('result-page');
-        renderResult();
-    } 
-    // 檢查是否有儲存進度
-    else if (savedProgress) {
-        const { answers: savedAnswers } = JSON.parse(savedProgress);
-        if (savedAnswers && Object.keys(savedAnswers).length > 0) {
-            resumeModal.style.display = 'flex'; // 彈出繼續測驗的視窗
-        }
-    }
-};
+                if (savedResult) {
+                    resultReport = JSON.parse(savedResult);
+                    switchPage('result-page');
+                    renderResult();
+                } else if (savedProgress) {
+                    const { answers: savedAnswers } = JSON.parse(savedProgress);
+                    if (savedAnswers && Object.keys(savedAnswers).length > 0) {
+                        resumeModal.style.display = 'flex';
+                    }
+                }
+            };
             const switchPage = (pageId) => {
                 document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
                 document.getElementById(pageId).classList.add('active');
@@ -930,57 +911,26 @@ script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas
                     saveProgress();
                 }
             };
-            const handleGoogleSignIn = async () => {
-    if (user) {
-        // 如果已經登入（無論是匿名還是 Google），則直接跳過登入步驟
-        console.log("User already signed in:", user.uid);
-        return true;
-    }
-
-    showLoader('正在跳轉 Google 登入...');
-    try {
-        const provider = new window.firebase.GoogleAuthProvider();
-        const result = await window.firebase.signInWithPopup(auth, provider);
-        user = result.user; // 更新 user 狀態
-        console.log("Google Sign In successful. User ID:", user.uid);
-        hideLoader();
-        return true;
-    } catch (error) {
-        hideLoader();
-        console.error("Google Sign In failed:", error.code, error.message);
-        if (error.code !== 'auth/popup-closed-by-user') {
-            alert(`登入失敗，請稍後再試。錯誤: ${error.message}`);
-        }
-        return false;
-    }
-};
-           const handleStartQuiz = async () => {
-    // 1. 強制登入 Google
-    const signedIn = await handleGoogleSignIn(); 
-    if (!signedIn) return; // 如果登入失敗，則停止執行
-
-    showLoader('正在準備題目...');
-    try {
-        // 2. 取得題目
-        const response = await fetch('/api/quiz?action=getQuestions');
-        if (!response.ok) throw new Error('無法從伺服器獲取題目');
-        
-        // *** 關鍵修正：將取得的題目賦值給全域變數 questions ***
-        questions = await response.json(); 
-        
-        if (questions && questions.length > 0) {
-            switchPage('quiz-page');
-            renderQuiz();
-        } else {
-            throw new Error('題目資料格式不正確');
-        }
-    } catch (error) {
-        console.error("Failed to load questions:", error);
-        alert('抱歉，載入題目時發生錯誤，請稍後再試。');
-    } finally {
-        hideLoader();
-    }
-};
+            const handleStartQuiz = async () => {
+                showLoader('正在準備題目...');
+                try {
+                    const response = await fetch('/api/quiz?action=getQuestions');
+                    if (!response.ok) throw new Error('無法從伺服器獲取題目');
+                    questions = await response.json();
+                    
+                    if (questions && questions.length > 0) {
+                        switchPage('quiz-page');
+                        renderQuiz();
+                    } else {
+                        throw new Error('題目資料格式不正確');
+                    }
+                } catch (error) {
+                    console.error("Failed to load questions:", error);
+                    alert('抱歉，載入題目時發生錯誤，請稍後再試。');
+                } finally {
+                    hideLoader();
+                }
+            };
             const handleSubmit = async () => {
                 showLoader('正在為您分析報告...');
                 clearProgress();
@@ -1266,32 +1216,26 @@ script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas
 
             // --- INITIALIZATION ---
             
-          const setupFirebase = async () => {
-    // 由於已硬寫入配置，這裡直接使用全局變數 __firebase_config
-    if (!__firebase_config || !__firebase_config.apiKey) {
-        console.error("Firebase Config is missing or incomplete in the hardcoded script.");
-        alert("錯誤：Firebase 設定遺失，請聯絡網站管理員。");
-        return;
-    }
-    
-    try {
-        const app = window.firebase.initializeApp(__firebase_config);
-        auth = window.firebase.getAuth(app);
-        db = window.firebase.getFirestore(app);
-        
-        // 監聽登入狀態
-        window.firebase.onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) {
-                user = currentUser;
-                initializeQuizAndCheckProgress();
-            }
-        });
-        
-    } catch (error) {
-        console.error("Firebase initialization failed:", error);
-        alert("抱歉，Firebase 服務連線失敗，請稍後再試。");
-    }
-};
+            const setupFirebase = async () => {
+                try {
+                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                    if (Object.keys(firebaseConfig).length === 0) return;
+                    const app = window.firebase.initializeApp(firebaseConfig);
+                    auth = window.firebase.getAuth(app);
+                    db = window.firebase.getFirestore(app);
+                    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (initialAuthToken) {
+                        await window.firebase.signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await window.firebase.signInAnonymously(auth);
+                    }
+                    window.firebase.onAuthStateChanged(auth, (currentUser) => {
+                        if (currentUser) user = currentUser;
+                    });
+                } catch (error) {
+                    console.error("Firebase initialization failed:", error);
+                }
+            };
             
             startQuizBtn.addEventListener('click', handleStartQuiz);
             nextBtn.addEventListener('click', handleNext);
@@ -1331,18 +1275,11 @@ script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas
             
             lucide.createIcons();
             setupFirebase();
-            
+            initializeQuiz();
         });
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
 
 
 
