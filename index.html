@@ -1284,34 +1284,45 @@
 
             // --- INITIALIZATION ---
             
-           const setupFirebase = async () => {
+          const setupFirebase = async () => {
                 return new Promise(async (resolve, reject) => {
                     try {
-                        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-                        if (Object.keys(firebaseConfig).length === 0) return resolve(); // 無配置直接返回
-                        const app = window.firebase.initializeApp(firebaseConfig);
+                        // 1. 從我們剛建立的 Netlify Function 獲取設定
+                        // 注意：這裡的路徑對應到 netlify.toml 的設定 (/api/* -> /.netlify/functions/*)
+                        const response = await fetch('/api/config');
+                        
+                        if (!response.ok) {
+                            throw new Error(`無法獲取 Firebase 設定: ${response.statusText}`);
+                        }
+
+                        const firebaseConfig = await response.json();
+
+                        // 檢查是否有拿到 apiKey (代表環境變數有設定成功)
+                        if (!firebaseConfig.apiKey) {
+                            throw new Error("Firebase 設定檔為空，請檢查 Netlify 環境變數");
+                        }
+
+                        // 2. 初始化 Firebase
+                        const app = window.firebase.getApps().length === 0 
+                                  ? window.firebase.initializeApp(firebaseConfig) 
+                                  : window.firebase.getApp();
+                        
                         auth = window.firebase.getAuth(app);
                         db = window.firebase.getFirestore(app);
-                        
-                        // 使用 onAuthStateChanged 確保初始化完成，並獲取最新的 user 狀態
+
+                        // 3. 監聽登入狀態，確認 Auth 已準備好
                         const unsubscribe = window.firebase.onAuthStateChanged(auth, (currentUser) => {
-                            if (currentUser) user = currentUser;
-                            // 無論登入與否，初始化流程完成，解除監聽並解決 Promise
+                            if (currentUser) {
+                                user = currentUser;
+                                console.log("使用者已登入:", user.email);
+                            }
                             unsubscribe();
                             resolve(); 
                         });
-                        
-                        // 處理 custom token 的情況 (如果有的話)
-                        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                        if (initialAuthToken) {
-                            await window.firebase.signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            // 如果沒有 Custom Token，直接讓 onAuthStateChanged 處理初始狀態
-                            // 這裡不需要額外操作，等待 onAuthStateChanged resolve 即可
-                        }
-                        
+
                     } catch (error) {
-                        console.error("Firebase initialization failed:", error);
+                        console.error("Firebase 初始化失敗:", error);
+                        // 這裡失敗會導致後續 handleStartQuiz 接到錯誤
                         reject(error);
                     }
                 });
@@ -1360,6 +1371,7 @@
     </script>
 </body>
 </html>
+
 
 
 
