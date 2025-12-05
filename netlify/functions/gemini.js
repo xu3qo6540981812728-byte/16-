@@ -23,9 +23,8 @@ exports.handler = async (event, context) => {
             return { statusCode: 400, body: JSON.stringify({ error: { message: '缺少 Prompt 內容' } }) };
         }
 
-        // 3. 呼叫 Google Gemini API
-        // 改用 -latest 後綴，這是目前最穩定的版本別名
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+       
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
         
         const payload = {
             contents: [{
@@ -72,4 +71,5 @@ const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1
         };
     }
 };
+
 
