@@ -7,9 +7,6 @@
     "dev": "netlify dev",
     "build": "echo Static site — no compile step"
   },
-  "dependencies": {
-    "firebase-admin": "^12.6.0"
-  },
   "devDependencies": {
     "netlify-cli": "^19.0.0"
   },
