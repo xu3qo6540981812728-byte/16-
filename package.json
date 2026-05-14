@@ -1,0 +1,19 @@
+{
+  "name": "real-estate-mbti-quiz",
+  "version": "1.0.0",
+  "private": true,
+  "description": "房仲16型人格測驗（Netlify 靜態站 + Functions）",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo Static site — no compile step"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^19.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

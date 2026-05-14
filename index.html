@@ -22,32 +22,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script type="module">
-    // 1. 引入 getApps 和 getApp
-    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { 
-        getAuth, 
-        signInWithCustomToken, 
-        onAuthStateChanged,
-        signInWithPopup, 
-        GoogleAuthProvider 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    
-    // 2. 將它們加入 window.firebase 物件，這樣 setupFirebase 才能讀取到
-    window.firebase = {
-        initializeApp, 
-        getApps, // *** [補上這個] ***
-        getApp,  // *** [補上這個] ***
-        getAuth, 
-        signInWithCustomToken,
-        onAuthStateChanged, 
-        getFirestore, 
-        doc, 
-        setDoc,
-        signInWithPopup, 
-        GoogleAuthProvider 
-    };
-</script>
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        window.firebase = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
+            onAuthStateChanged, getFirestore, doc, setDoc
+        };
+    </script>
 
     <style>
     html {
@@ -367,6 +349,40 @@
             </div>
         </div>
     </div>
+
+    <!-- 內部管理：無任何導覽連結；以快捷鍵或網址 #_mh-stats 開啟，並需伺服器端金鑰 -->
+    <div id="admin-panel" class="fixed inset-0 z-[200] bg-slate-900 text-slate-100 overflow-hidden" style="display: none;" aria-hidden="true">
+        <div class="flex flex-col h-full max-w-6xl mx-auto p-4">
+            <div class="flex justify-between items-center mb-3 gap-2">
+                <h2 class="text-lg font-semibold text-white">作答紀錄（內部）</h2>
+                <button type="button" id="admin-close-btn" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-sm">關閉 (Esc)</button>
+            </div>
+            <div class="flex flex-wrap gap-2 items-end mb-3">
+                <div class="flex-1 min-w-[200px]">
+                    <label for="admin-key-input" class="block text-xs text-slate-400 mb-1">管理金鑰</label>
+                    <input id="admin-key-input" type="password" autocomplete="off" class="w-full px-3 py-2 rounded bg-slate-800 border border-slate-600 text-sm" placeholder="與 Netlify 環境變數 ADMIN_DASHBOARD_KEY 相同" />
+                </div>
+                <button type="button" id="admin-load-btn" class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-sm font-medium">載入全部</button>
+            </div>
+            <p id="admin-status" class="text-sm text-slate-400 mb-2"></p>
+            <div class="flex-1 overflow-auto border border-slate-700 rounded-lg bg-slate-950">
+                <table class="min-w-full text-left text-xs">
+                    <thead class="sticky top-0 bg-slate-800 text-slate-300">
+                        <tr>
+                            <th class="p-2 font-medium">時間</th>
+                            <th class="p-2 font-medium">姓名／稱呼</th>
+                            <th class="p-2 font-medium">MBTI</th>
+                            <th class="p-2 font-medium">類型</th>
+                            <th class="p-2 font-medium">Firebase UID</th>
+                            <th class="p-2 font-medium">詳細</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-tbody" class="divide-y divide-slate-800"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div id="app-container" style="display: none;">
         <div id="intro-page" class="page active flex-col items-center justify-between min-h-screen p-4 text-center">
             <div class="flex-grow flex items-center justify-center w-full">
@@ -377,6 +393,10 @@
                     <p class="text-lg text-gray-600 mb-6 leading-relaxed">
                         這份問卷旨在幫助您探索在房仲工作上的個人風格偏好，作為職涯發展的參考。它並非嚴格的心理學診斷，測驗結果可能因您當下的心境與情境而異。
                     </p>
+                    <div class="mb-6 text-left max-w-md mx-auto">
+                        <label for="respondent-name" class="block text-xs text-gray-400 mb-1">稱呼或姓名（選填，僅供內部統計）</label>
+                        <input id="respondent-name" type="text" maxlength="80" class="form-input text-sm w-full" placeholder="可不填" autocomplete="name" />
+                    </div>
                     <button id="start-quiz-btn" type="button" class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
                         開始測驗 <i data-lucide="chevron-right" class="inline-block ml-2"></i>
                     </button>
@@ -436,7 +456,10 @@
             <i data-lucide="arrow-up-circle" class="w-4 h-4"></i>
             <span>回頂部</span>
         </a>
-            
+            <a href="#gemini-section" class="result-nav-link text-sm sm:text-base text-gray-600 font-semibold px-3 py-2 rounded-full hover:bg-indigo-100 transition-all duration-300 flex items-center space-x-1">
+                <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+                <span>AI分析</span>
+            </a>
             <a href="#share-section" class="result-nav-link text-sm sm:text-base text-gray-600 font-semibold px-3 py-2 rounded-full hover:bg-indigo-100 transition-all duration-300 flex items-center space-x-1">
                 <i data-lucide="share-2" class="w-4 h-4"></i>
                 <span>分享海報</span>
@@ -495,7 +518,8 @@
             let user = null;
             let db = null;
             let auth = null;
-           
+            let geminiAnalysis = '';
+            let isGeminiLoading = false;
             let resultReport = {};
             let radarChartInstance = null;
             let questions = [];
@@ -589,9 +613,6 @@
                         resumeModal.style.display = 'flex';
                     }
                 }
-                
-                // *** [移除] 這裡不再主動呼叫 setupFirebase() ***
-                // setupFirebase(); // 刪除此行或確保它不存在
             };
             const switchPage = (pageId) => {
                 document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
@@ -742,7 +763,7 @@
                                 <h3 class="text-2xl font-semibold flex items-center text-blue-800 mb-2"><i data-lucide="user-check" class="w-6 h-6 mr-2"></i> 給主管的管理建議</h3>
                                 <p class="text-gray-700 leading-relaxed">${report.management_suggestion}</p>
                             </div>
-                         
+                            <div id="gemini-section" class="mt-8 pt-6 border-t-2 border-dashed border-indigo-200">${renderGeminiSection()}</div>
                         </div>
                         
                         <div id="share-section" class="mt-8 pt-6 border-t-2 border-indigo-200 text-center">
@@ -768,7 +789,8 @@
                 resultContentEl.innerHTML = html;
                 lucide.createIcons();
                 renderRadarChart(report.superpowerScores);
-               
+                
+                document.getElementById('gemini-analysis-btn')?.addEventListener('click', handleGeminiAnalysis);
                 document.getElementById('generate-poster-btn').addEventListener('click', handleGeneratePoster);
                 document.getElementById('copy-share-btn').addEventListener('click', handleCopyShareText);
                 document.getElementById('generate-business-card-btn').addEventListener('click', handleGenerateBusinessCard);
@@ -781,7 +803,7 @@
                 const topLink = document.getElementById('back-to-top-link');
                 const reportTop = document.getElementById('report-header');
                 const sections = [
-                   
+                    document.getElementById('gemini-section'),
                     document.getElementById('share-section'),
                     
                 ];
@@ -881,7 +903,15 @@
                 });
             };
             
-            
+            const renderGeminiSection = () => {
+                if (isGeminiLoading) {
+                    return `<div class="flex flex-col items-center justify-center text-center p-6 bg-gray-50 rounded-lg"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div><p class="mt-4 text-lg text-gray-600 font-semibold">您的專屬 AI 教練正在為您分析...</p><p class="text-sm text-gray-500">請稍候，這可能需要一點時間。</p></div>`;
+                }
+                if (geminiAnalysis) {
+                    return `<div class="p-6 bg-indigo-50 rounded-lg shadow-inner space-y-4"><h3 class="text-3xl font-extrabold flex items-center text-indigo-800 mb-4"><i data-lucide="brain-circuit" class="w-8 h-8 mr-3 text-indigo-500"></i> AI 深度職涯分析報告</h3><div class="prose prose-indigo max-w-none">${geminiAnalysis.replace(/### (.*?)\n/g, '<h3>$1</h3>').replace(/\n/g, '<br />')}</div></div>`;
+                }
+                return `<div class="text-center"><button id="gemini-analysis-btn" type="button" class="px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50"><i data-lucide="sparkles" class="inline-block mr-3"></i> 取得 AI 深度職涯分析</button></div>`;
+            };
 
             const updateNavButtons = () => {
                 prevBtn.disabled = currentQuestionIndex === 0;
@@ -920,42 +950,10 @@
                 }
             };
             const handleStartQuiz = async () => {
-                showLoader('正在連接伺服器...');
-                
-                // 1. 檢查並確保 Firebase 已初始化
-                if (!auth) {
-                    try {
-                        await setupFirebase(); // 等待初始化完成
-                    } catch (e) {
-                        hideLoader();
-                        alert('無法連接到資料庫，請檢查您的網路或 Firebase 設定。');
-                        return;
-                    }
-                }
-
-                // 2. 檢查登入狀態
-                if (!user) {
-                    loadingText.textContent = '請登入 Google 帳號...';
-                    try {
-                        const provider = new window.firebase.GoogleAuthProvider();
-                        // 執行 Google 彈出式登入
-                        const result = await window.firebase.signInWithPopup(auth, provider);
-                        user = result.user;
-                        console.log("Google 登入成功:", user.displayName);
-                    } catch (error) {
-                        hideLoader();
-                        console.error("Google 登入失敗:", error);
-                        alert('必須登入 Google 帳號才能開始測驗。');
-                        return;
-                    }
-                }
-
-                // 3. 登入成功，開始載入題目
                 showLoader('正在準備題目...');
                 try {
                     const response = await fetch('/api/quiz?action=getQuestions');
                     if (!response.ok) throw new Error('無法從伺服器獲取題目');
-                    
                     questions = await response.json();
                     
                     if (questions && questions.length > 0) {
@@ -966,7 +964,7 @@
                     }
                 } catch (error) {
                     console.error("Failed to load questions:", error);
-                    alert('載入題目時發生錯誤，請稍後再試。');
+                    alert('抱歉，載入題目時發生錯誤，請稍後再試。');
                 } finally {
                     hideLoader();
                 }
@@ -976,7 +974,6 @@
                 clearProgress();
 
                 try {
-                    // 1. 計算結果
                     const response = await fetch('/api/quiz?action=calculateResult', { 
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -987,39 +984,27 @@
                     resultReport = await response.json();
                     saveResult(resultReport);
                     
-                    // 2. 顯示結果 (讓使用者立刻看到報告)
                     switchPage('result-page');
                     renderResult();
-
-                    // 3. 背景靜默儲存資料
                     if (user && db) {
                         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                        const userId = user.uid; 
-                        
+                        const userId = user.uid || crypto.randomUUID();
                         const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
-                        
-                        const dataToSave = {
+                        const nameEl = document.getElementById('respondent-name');
+                        const respondentName = (nameEl && nameEl.value) ? nameEl.value.trim().slice(0, 80) : '';
+                        await window.firebase.setDoc(userRef, {
                             mbtiType: resultReport.mbtiType,
                             type_name: resultReport.type_name,
                             timestamp: new Date().toISOString(),
-                            displayName: user.displayName || 'Guest',
-                            email: user.email || 'N/A',
-                            photoURL: user.photoURL || '',
-                            quizRawAnswers: answers, 
-                            quizScore: resultReport.scoreDetails || {}, 
-                            firebaseUid: user.uid 
-                        };
-
-                        // 執行寫入 (await 確保寫入完成，但移除所有成功通知)
-                        await window.firebase.setDoc(userRef, dataToSave);
-                        
-                        // *** [修改] 這裡原本的 alert 和 console.log 都移除了 ***
-                        // 程式會安靜地結束，不打擾使用者
+                            respondentName: respondentName || null,
+                            answers: { ...answers },
+                            resultReport: { ...resultReport },
+                        });
                     }
 
                 } catch (error) {
-                    // 只有發生嚴重錯誤時才在後台紀錄，但不影響使用者看報告
-                    console.error("背景存檔發生錯誤 (不影響報告顯示):", error);
+                    console.error("Failed to submit and get result:", error);
+                    alert('抱歉，提交答案時發生錯誤，請稍後再試。');
                 } finally {
                     hideLoader();
                 }
@@ -1051,7 +1036,37 @@
                     setTimeout(() => { copyBtn.innerHTML = originalText; lucide.createIcons(); }, 2500);
                 } catch (err) { console.error('無法複製文字: ', err); } finally { document.body.removeChild(textArea); }
             };
-            
+            const handleGeminiAnalysis = async () => {
+                isGeminiLoading = true;
+                geminiAnalysis = '';
+                document.getElementById('gemini-section').innerHTML = renderGeminiSection();
+                lucide.createIcons();
+
+                const report = resultReport;
+                const prompt = `你是一位資深的房仲職涯教練，語氣專業、誠懇且充滿鼓勵。一位夥伴剛剛完成了16型人格測驗，這是他的結果報告：\n- MBTI 類型: ${report.mbtiType}\n- 房仲人格標籤: ${report.type_name}\n- 優勢與潛力: ${report.strengthsText}\n- 潛在弱點與挑戰: ${report.weaknesses}\n- 建議的開發策略: ${report.client_strategy}\n- 建議的銷售策略: ${report.negotiation_strategy}\n- 建議的團隊協作方式: ${report.teamwork_suggestion}\n### 房仲超能力雷達圖分數 (滿分10分)\n- 開發力: ${report.superpowerScores['開發力']}\n- 談判力: ${report.superpowerScores['談判力']}\n- 服務力: ${report.superpowerScores['服務力']}\n- 分析力: ${report.superpowerScores['分析力']}\n- 抗壓力: ${report.superpowerScores['抗壓力']}\n\n基於以上所有報告，請為這位夥伴撰寫一份詳細、充滿鼓勵且具體的5年職涯發展計畫。請用繁體中文回答，並包含以下幾個部分，用 markdown 格式化，標題請用 '###'：\n1. **### 總體職涯定位與心態建議**: 根據他的性格，給予一個整體的職涯定位和成功心法。\n2.  **### 短期目標 (第1年)**: 列出3個具體的、可執行的目標，幫助他快速上手並建立信心。\n3.  **### 中期目標 (第2-3年)**: 提出2-3個進階目標，幫助他深化專業並建立個人品牌。\n4.  **### 長期目標 (第4-5年)**: 描繪一個長遠的發展藍圖，例如成為頂尖業務、團隊領導或特定領域的專家。\n5.  **### ✨ 你的專屬創意行銷點子 ✨**: 提供一個最符合他性格特質、與眾不同的創意行銷點子。\n6. **### 🚀 房仲超能力分析與提升建議**: 根據雷達圖分數，首先讚揚分數最高的1-2項能力，並說明這對他的職涯有何幫助。接著，找出分數最低的2項能力，用鼓勵的語氣，為這兩項能力各提供一個具體的、可立即執行的練習方法或學習建議，幫助他補強弱項。`;
+                 
+                try {
+                    const response = await fetch('/api/gemini', { 
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: prompt })
+                    });
+                    if (!response.ok) {
+                         const errorResult = await response.json();
+                         throw new Error(errorResult.error.message || 'API request failed');
+                    }
+                    
+                    const result = await response.json();
+                    geminiAnalysis = result.text;
+                } catch (error) {
+                    console.error("Gemini analysis failed:", error);
+                    geminiAnalysis = `抱歉，無法連接至 AI 分析服務：${error.message}`;
+                } finally {
+                    isGeminiLoading = false;
+                    document.getElementById('gemini-section').innerHTML = renderGeminiSection();
+                    lucide.createIcons();
+                }
+            };
             const handleRetake = () => {
                 currentPage = 'intro';
                 answers = {};
@@ -1244,48 +1259,25 @@
 
             // --- INITIALIZATION ---
             
-          const setupFirebase = async () => {
-                return new Promise(async (resolve, reject) => {
-                    try {
-                        // 1. 從我們剛建立的 Netlify Function 獲取設定
-                        // 注意：這裡的路徑對應到 netlify.toml 的設定 (/api/* -> /.netlify/functions/*)
-                        const response = await fetch('/api/config');
-                        
-                        if (!response.ok) {
-                            throw new Error(`無法獲取 Firebase 設定: ${response.statusText}`);
-                        }
-
-                        const firebaseConfig = await response.json();
-
-                        // 檢查是否有拿到 apiKey (代表環境變數有設定成功)
-                        if (!firebaseConfig.apiKey) {
-                            throw new Error("Firebase 設定檔為空，請檢查 Netlify 環境變數");
-                        }
-
-                        // 2. 初始化 Firebase
-                        const app = window.firebase.getApps().length === 0 
-                                  ? window.firebase.initializeApp(firebaseConfig) 
-                                  : window.firebase.getApp();
-                        
-                        auth = window.firebase.getAuth(app);
-                        db = window.firebase.getFirestore(app);
-
-                        // 3. 監聽登入狀態，確認 Auth 已準備好
-                        const unsubscribe = window.firebase.onAuthStateChanged(auth, (currentUser) => {
-                            if (currentUser) {
-                                user = currentUser;
-                                console.log("使用者已登入:", user.email);
-                            }
-                            unsubscribe();
-                            resolve(); 
-                        });
-
-                    } catch (error) {
-                        console.error("Firebase 初始化失敗:", error);
-                        // 這裡失敗會導致後續 handleStartQuiz 接到錯誤
-                        reject(error);
+            const setupFirebase = async () => {
+                try {
+                    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                    if (Object.keys(firebaseConfig).length === 0) return;
+                    const app = window.firebase.initializeApp(firebaseConfig);
+                    auth = window.firebase.getAuth(app);
+                    db = window.firebase.getFirestore(app);
+                    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (initialAuthToken) {
+                        await window.firebase.signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await window.firebase.signInAnonymously(auth);
                     }
-                });
+                    window.firebase.onAuthStateChanged(auth, (currentUser) => {
+                        if (currentUser) user = currentUser;
+                    });
+                } catch (error) {
+                    console.error("Firebase initialization failed:", error);
+                }
             };
             
             startQuizBtn.addEventListener('click', handleStartQuiz);
@@ -1327,19 +1319,99 @@
             lucide.createIcons();
             setupFirebase();
             initializeQuiz();
+
+            // --- 內部管理面板（無公開入口）：Ctrl+Shift+Alt+M 或網址 #_mh-stats ---
+            const adminPanel = document.getElementById('admin-panel');
+            const adminKeyInput = document.getElementById('admin-key-input');
+            const adminLoadBtn = document.getElementById('admin-load-btn');
+            const adminCloseBtn = document.getElementById('admin-close-btn');
+            const adminTbody = document.getElementById('admin-tbody');
+            const adminStatus = document.getElementById('admin-status');
+
+            const escapeHtml = (s) => String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+
+            const openAdminPanel = () => {
+                if (!adminPanel) return;
+                adminPanel.style.display = 'block';
+                adminPanel.setAttribute('aria-hidden', 'false');
+                adminKeyInput?.focus();
+            };
+            const closeAdminPanel = () => {
+                if (!adminPanel) return;
+                adminPanel.style.display = 'none';
+                adminPanel.setAttribute('aria-hidden', 'true');
+                if (adminTbody) adminTbody.innerHTML = '';
+                if (adminStatus) adminStatus.textContent = '';
+            };
+
+            const loadAdminData = async () => {
+                const key = adminKeyInput?.value?.trim() || '';
+                if (!key) {
+                    if (adminStatus) adminStatus.textContent = '請輸入管理金鑰。';
+                    return;
+                }
+                if (adminStatus) adminStatus.textContent = '載入中…';
+                if (adminTbody) adminTbody.innerHTML = '';
+                try {
+                    const res = await fetch('/api/admin-data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+                    if (adminStatus) adminStatus.textContent = `共 ${data.count} 筆`;
+                    for (const row of data.submissions || []) {
+                        const detailJson = JSON.stringify({ answers: row.answers, resultReport: row.resultReport }, null, 2);
+                        const tr = document.createElement('tr');
+                        tr.className = 'align-top border-t border-slate-800';
+                        tr.innerHTML = `
+                            <td class="p-2 text-slate-300 whitespace-nowrap">${escapeHtml(row.timestamp || '')}</td>
+                            <td class="p-2">${escapeHtml(row.respondentName || '—')}</td>
+                            <td class="p-2 font-mono">${escapeHtml(row.mbtiType || '')}</td>
+                            <td class="p-2 text-slate-300 max-w-xs">${escapeHtml(row.type_name || '')}</td>
+                            <td class="p-2 font-mono text-[10px] break-all max-w-[140px]">${escapeHtml(row.firebaseUserId || '')}</td>
+                            <td class="p-2"><details class="text-indigo-400"><summary class="cursor-pointer select-none text-xs">完整</summary><pre class="mt-1 text-[10px] max-h-56 overflow-auto bg-black/40 p-2 rounded text-slate-200 whitespace-pre-wrap text-left">${escapeHtml(detailJson)}</pre></details></td>`;
+                        adminTbody.appendChild(tr);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    if (adminStatus) adminStatus.textContent = '載入失敗：' + (err.message || String(err));
+                }
+            };
+
+            adminLoadBtn?.addEventListener('click', loadAdminData);
+            adminCloseBtn?.addEventListener('click', closeAdminPanel);
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.shiftKey && e.altKey && (e.key === 'm' || e.key === 'M')) {
+                    e.preventDefault();
+                    openAdminPanel();
+                }
+                if (e.key === 'Escape' && adminPanel && adminPanel.style.display === 'block') {
+                    closeAdminPanel();
+                }
+            });
+            if (location.hash === '#_mh-stats') {
+                history.replaceState(null, '', location.pathname + location.search);
+                openAdminPanel();
+            }
+
+            const respondentNameInput = document.getElementById('respondent-name');
+            if (respondentNameInput) {
+                const savedName = localStorage.getItem('mbtiRespondentName');
+                if (savedName) respondentNameInput.value = savedName;
+                respondentNameInput.addEventListener('change', () => {
+                    localStorage.setItem('mbtiRespondentName', respondentNameInput.value.trim().slice(0, 80));
+                });
+            }
         });
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
 
 
 
