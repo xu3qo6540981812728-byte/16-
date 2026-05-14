@@ -98,6 +98,9 @@ function firestoreValueToJs(v) {
   if (v.doubleValue !== undefined) return v.doubleValue;
   if (v.stringValue !== undefined) return v.stringValue;
   if (v.timestampValue !== undefined) return v.timestampValue;
+  if (v.bytesValue !== undefined) return v.bytesValue;
+  if (v.referenceValue !== undefined) return v.referenceValue;
+  if (v.geoPointValue !== undefined) return v.geoPointValue;
   if (v.mapValue && v.mapValue.fields) {
     const o = {};
     for (const k of Object.keys(v.mapValue.fields)) {
@@ -179,7 +182,7 @@ async function fetchSubmissionsViaCollectionGroup(accessToken, projectId) {
     if (!userId) continue;
 
     const data = documentToPlain(doc);
-    const row = { firebaseUserId: userId };
+    const row = { firebaseUserId: userId, documentPath: name };
     for (const key of Object.keys(data)) {
       row[key] = data[key];
     }
@@ -278,7 +281,9 @@ exports.handler = async function (event) {
         count: submissions.length,
         submissions: submissions,
         meta: {
-          source: 'collection_group:quiz_results (all appIds under artifacts/.../users/.../quiz_results/latest)',
+          firestorePathPattern:
+            'artifacts/{appId}/users/{firebaseUid}/quiz_results/latest',
+          query: 'collection_group:quiz_results + filter /artifacts/ + /quiz_results/latest',
           envAppIdHint: process.env.FIREBASE_ARTIFACTS_APP_ID || 'default-app-id',
         },
       }),

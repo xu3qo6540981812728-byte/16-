@@ -23,11 +23,12 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         window.firebase = {
-            initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
-            onAuthStateChanged, getFirestore, doc, setDoc
+            initializeApp, getAuth, signInWithCustomToken,
+            onAuthStateChanged, getFirestore, doc, setDoc,
+            GoogleAuthProvider, signInWithPopup
         };
     </script>
 
@@ -371,6 +372,7 @@
                         <tr>
                             <th class="p-2 font-medium">時間</th>
                             <th class="p-2 font-medium">姓名／稱呼</th>
+                            <th class="p-2 font-medium">Email</th>
                             <th class="p-2 font-medium">MBTI</th>
                             <th class="p-2 font-medium">類型</th>
                             <th class="p-2 font-medium">Firebase UID</th>
@@ -397,6 +399,10 @@
                         <label for="respondent-name" class="block text-xs text-gray-400 mb-1">稱呼或姓名（選填，僅供內部統計）</label>
                         <input id="respondent-name" type="text" maxlength="80" class="form-input text-sm w-full" placeholder="可不填" autocomplete="name" />
                     </div>
+                    <p id="google-auth-status" class="text-sm text-gray-500 mb-4">正在檢查登入狀態…</p>
+                    <button id="google-signin-btn" type="button" class="hidden mb-3 px-6 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        使用 Google 登入
+                    </button>
                     <button id="start-quiz-btn" type="button" class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
                         開始測驗 <i data-lucide="chevron-right" class="inline-block ml-2"></i>
                     </button>
@@ -529,6 +535,8 @@
             const quizPage = document.getElementById('quiz-page');
             const resultPage = document.getElementById('result-page');
             const startQuizBtn = document.getElementById('start-quiz-btn');
+            const googleAuthStatusEl = document.getElementById('google-auth-status');
+            const googleSigninBtn = document.getElementById('google-signin-btn');
             const quizContentEl = document.getElementById('quiz-content');
             const resultContentEl = document.getElementById('result-content');
             const prevBtn = document.getElementById('prev-btn');
@@ -949,9 +957,89 @@
                     saveProgress();
                 }
             };
-            const handleStartQuiz = async () => {
-                showLoader('正在準備題目...');
+
+            const isEmbedCustomAuth = function () {
+                return (
+                    typeof __initial_auth_token !== 'undefined' &&
+                    __initial_auth_token &&
+                    String(__initial_auth_token).trim().length > 0
+                );
+            };
+
+            const updateGoogleAuthStatusUi = function () {
+                if (!googleAuthStatusEl) return;
+                if (!auth) {
+                    googleAuthStatusEl.textContent = 'Firebase 未設定，無法同步結果。';
+                    if (googleSigninBtn) googleSigninBtn.classList.add('hidden');
+                    return;
+                }
+                if (isEmbedCustomAuth()) {
+                    googleAuthStatusEl.textContent = user
+                        ? '已使用開發環境身分登入，可直接開始測驗。'
+                        : '正在登入…';
+                    if (googleSigninBtn) googleSigninBtn.classList.add('hidden');
+                    return;
+                }
+                if (user && !user.isAnonymous) {
+                    const okGoogle =
+                        user.providerData &&
+                        user.providerData.some(function (p) {
+                            return p.providerId === 'google.com';
+                        });
+                    if (okGoogle) {
+                        googleAuthStatusEl.textContent =
+                            '已登入 Google：' + (user.email || user.displayName || user.uid);
+                        if (googleSigninBtn) googleSigninBtn.classList.add('hidden');
+                        return;
+                    }
+                }
+                googleAuthStatusEl.textContent =
+                    '請先使用 Google 登入，再開始測驗（結果會存到您的帳號）。';
+                if (googleSigninBtn) googleSigninBtn.classList.remove('hidden');
+            };
+
+            const ensureGoogleOrEmbedUser = async function () {
+                if (!auth) {
+                    alert('系統未設定雲端登入，無法儲存測驗結果。');
+                    return false;
+                }
+                if (isEmbedCustomAuth()) {
+                    if (!user) {
+                        alert('正在登入，請稍候再試。');
+                        return false;
+                    }
+                    return true;
+                }
+                if (user && !user.isAnonymous) {
+                    const okGoogle =
+                        user.providerData &&
+                        user.providerData.some(function (p) {
+                            return p.providerId === 'google.com';
+                        });
+                    if (okGoogle) return true;
+                }
                 try {
+                    const provider = new window.firebase.GoogleAuthProvider();
+                    provider.setCustomParameters({ prompt: 'select_account' });
+                    const cred = await window.firebase.signInWithPopup(auth, provider);
+                    user = cred.user;
+                    updateGoogleAuthStatusUi();
+                    return true;
+                } catch (e) {
+                    console.error(e);
+                    alert(
+                        '需要登入 Google 才能開始測驗。若彈出視窗被阻擋，請允許後再試一次。'
+                    );
+                    return false;
+                }
+            };
+
+            const handleStartQuiz = async () => {
+                showLoader(isEmbedCustomAuth() ? '正在準備題目...' : '確認登入…');
+                try {
+                    const ok = await ensureGoogleOrEmbedUser();
+                    if (!ok) return;
+                    showLoader('正在準備題目...');
                     const response = await fetch('/api/quiz?action=getQuestions');
                     if (!response.ok) throw new Error('無法從伺服器獲取題目');
                     questions = await response.json();
@@ -988,15 +1076,24 @@
                     renderResult();
                     if (user && db) {
                         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                        const userId = user.uid || crypto.randomUUID();
+                        const userId = user.uid;
                         const userRef = window.firebase.doc(db, 'artifacts', appId, 'users', userId, 'quiz_results', 'latest');
                         const nameEl = document.getElementById('respondent-name');
                         const respondentName = (nameEl && nameEl.value) ? nameEl.value.trim().slice(0, 80) : '';
+                        const providerIds = (user.providerData || []).map(function (p) {
+                            return p.providerId;
+                        });
                         await window.firebase.setDoc(userRef, {
+                            firebaseUid: user.uid,
+                            email: user.email || null,
+                            displayName: user.displayName || null,
+                            photoURL: user.photoURL || null,
+                            authProviders: providerIds,
                             mbtiType: resultReport.mbtiType,
                             type_name: resultReport.type_name,
                             timestamp: new Date().toISOString(),
                             respondentName: respondentName || null,
+                            quizRawAnswers: { ...answers },
                             answers: { ...answers },
                             resultReport: { ...resultReport },
                         });
@@ -1269,11 +1366,10 @@
                     const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
                     if (initialAuthToken) {
                         await window.firebase.signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await window.firebase.signInAnonymously(auth);
                     }
                     window.firebase.onAuthStateChanged(auth, (currentUser) => {
-                        if (currentUser) user = currentUser;
+                        user = currentUser;
+                        updateGoogleAuthStatusUi();
                     });
                 } catch (error) {
                     console.error("Firebase initialization failed:", error);
@@ -1281,6 +1377,16 @@
             };
             
             startQuizBtn.addEventListener('click', handleStartQuiz);
+            if (googleSigninBtn) {
+                googleSigninBtn.addEventListener('click', async () => {
+                    showLoader('Google 登入…');
+                    try {
+                        await ensureGoogleOrEmbedUser();
+                    } finally {
+                        hideLoader();
+                    }
+                });
+            }
             nextBtn.addEventListener('click', handleNext);
             prevBtn.addEventListener('click', handlePrevious);
             submitBtn.addEventListener('click', handleSubmit);
@@ -1317,7 +1423,9 @@
             });
             
             lucide.createIcons();
-            setupFirebase();
+            setupFirebase().then(function () {
+                updateGoogleAuthStatusUi();
+            });
             initializeQuiz();
 
             // --- 內部管理面板（無公開入口）：Ctrl+Shift+Alt+M 或網址 #_mh-stats ---
@@ -1366,17 +1474,23 @@
                     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
                     if (adminStatus) adminStatus.textContent = `共 ${data.count} 筆`;
                     for (const row of data.submissions || []) {
-                        const detailJson = JSON.stringify({ answers: row.answers, resultReport: row.resultReport }, null, 2);
+                        const displayLabel = row.displayName || row.respondentName || '—';
+                        const emailLabel = row.email || '—';
+                        const detailJson = JSON.stringify(row, null, 2);
                         const tr = document.createElement('tr');
                         tr.className = 'align-top border-t border-slate-800';
                         tr.innerHTML = `
                             <td class="p-2 text-slate-300 whitespace-nowrap">${escapeHtml(row.timestamp || '')}</td>
-                            <td class="p-2">${escapeHtml(row.respondentName || '—')}</td>
+                            <td class="p-2">${escapeHtml(displayLabel)}</td>
+                            <td class="p-2 text-slate-300 break-all max-w-[180px]">${escapeHtml(emailLabel)}</td>
                             <td class="p-2 font-mono">${escapeHtml(row.mbtiType || '')}</td>
                             <td class="p-2 text-slate-300 max-w-xs">${escapeHtml(row.type_name || '')}</td>
                             <td class="p-2 font-mono text-[10px] break-all max-w-[140px]">${escapeHtml(row.firebaseUserId || '')}</td>
-                            <td class="p-2"><details class="text-indigo-400"><summary class="cursor-pointer select-none text-xs">完整</summary><pre class="mt-1 text-[10px] max-h-56 overflow-auto bg-black/40 p-2 rounded text-slate-200 whitespace-pre-wrap text-left">${escapeHtml(detailJson)}</pre></details></td>`;
+                            <td class="p-2"><details class="text-indigo-400"><summary class="cursor-pointer select-none text-xs">完整 JSON</summary><pre class="mt-1 text-[10px] max-h-96 overflow-auto bg-black/40 p-2 rounded text-slate-200 whitespace-pre-wrap text-left">${escapeHtml(detailJson)}</pre></details></td>`;
                         adminTbody.appendChild(tr);
+                    }
+                    if (data.meta && adminStatus) {
+                        adminStatus.textContent += ' · ' + (data.meta.firestorePathPattern || '');
                     }
                 } catch (err) {
                     console.error(err);
