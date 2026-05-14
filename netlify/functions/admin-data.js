@@ -1,13 +1,13 @@
 /**
  * Admin export: Firestore REST only (no firebase-admin).
- * Env: ADMIN_DASHBOARD_KEY, FIREBASE_SERVICE_ACCOUNT_JSON_B64 or FIREBASE_SERVICE_ACCOUNT_JSON,
- *      FIREBASE_ARTIFACTS_APP_ID (optional, default default-app-id)
+ * Uses collection-group query on "quiz_results" so all paths like
+ * artifacts/{anyAppId}/users/{uid}/quiz_results/latest are included
+ * (not tied to FIREBASE_ARTIFACTS_APP_ID).
+ *
+ * Env: ADMIN_DASHBOARD_KEY, FIREBASE_SERVICE_ACCOUNT_JSON_B64 or FIREBASE_SERVICE_ACCOUNT_JSON.
+ * FIREBASE_ARTIFACTS_APP_ID is optional (only echoed in meta for debugging).
  */
 const crypto = require('crypto');
-
-function getAppId() {
-  return process.env.FIREBASE_ARTIFACTS_APP_ID || 'default-app-id';
-}
 
 function getServiceAccountJsonString() {
   const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_B64;
@@ -120,11 +120,83 @@ function documentToPlain(doc) {
   return out;
 }
 
-function userIdFromDocumentName(name) {
+function parseUserIdFromQuizResultPath(name) {
   const parts = String(name).split('/');
-  const idx = parts.lastIndexOf('users');
-  if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
-  return parts[parts.length - 1] || '';
+  const qi = parts.lastIndexOf('quiz_results');
+  if (qi >= 1) return parts[qi - 1];
+  return '';
+}
+
+async function fetchSubmissionsViaCollectionGroup(accessToken, projectId) {
+  const runUrl =
+    'https://firestore.googleapis.com/v1/projects/' +
+    projectId +
+    '/databases/(default)/documents:runQuery';
+  const queryBody = JSON.stringify({
+    structuredQuery: {
+      from: [{ collectionId: 'quiz_results', allDescendants: true }],
+      limit: 5000,
+    },
+  });
+  const res = await fetch(runUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer ' + accessToken,
+      'Content-Type': 'application/json',
+    },
+    body: queryBody,
+  });
+  const rawText = await res.text();
+  let rows;
+  try {
+    rows = JSON.parse(rawText);
+  } catch (e1) {
+    throw new Error('runQuery response not JSON: ' + rawText.slice(0, 240));
+  }
+  if (!res.ok) {
+    const msg =
+      (rows.error && rows.error.message) ||
+      rows.error ||
+      'runQuery failed (' + String(res.status) + ')';
+    throw new Error(msg);
+  }
+  if (!Array.isArray(rows)) {
+    throw new Error('runQuery: unexpected response shape');
+  }
+
+  const byUserId = {};
+  for (let i = 0; i < rows.length; i++) {
+    const item = rows[i];
+    if (!item || !item.document) continue;
+    const doc = item.document;
+    const name = doc.name || '';
+    if (name.indexOf('/artifacts/') === -1) continue;
+    if (name.indexOf('/quiz_results/latest') === -1) continue;
+    const parts = name.split('/');
+    if (parts[parts.length - 1] !== 'latest') continue;
+
+    const userId = parseUserIdFromQuizResultPath(name);
+    if (!userId) continue;
+
+    const data = documentToPlain(doc);
+    const row = { firebaseUserId: userId };
+    for (const key of Object.keys(data)) {
+      row[key] = data[key];
+    }
+
+    const ts = String(row.timestamp || '');
+    const prev = byUserId[userId];
+    if (!prev || ts.localeCompare(String(prev.timestamp || '')) > 0) {
+      byUserId[userId] = row;
+    }
+  }
+
+  const submissions = [];
+  const keys = Object.keys(byUserId);
+  for (let k = 0; k < keys.length; k++) {
+    submissions.push(byUserId[keys[k]]);
+  }
+  return submissions;
 }
 
 exports.handler = async function (event) {
@@ -192,70 +264,8 @@ exports.handler = async function (event) {
 
     const accessToken = await getAccessToken(cred);
     const projectId = cred.project_id;
-    const appId = getAppId();
-    const apiRoot =
-      'https://firestore.googleapis.com/v1/projects/' +
-      projectId +
-      '/databases/(default)/documents';
-    const listBase = apiRoot + '/artifacts/' + encodeURIComponent(appId) + '/users';
 
-    const userIds = [];
-    let pageToken = '';
-    for (;;) {
-      const url = new URL(listBase);
-      url.searchParams.set('pageSize', '300');
-      if (pageToken) url.searchParams.set('pageToken', pageToken);
-      const listRes = await fetch(url.toString(), {
-        headers: { Authorization: 'Bearer ' + accessToken },
-      });
-      const listJson = await listRes.json().catch(function () {
-        return {};
-      });
-      if (!listRes.ok) {
-        const errMsg =
-          (listJson.error && listJson.error.message) ||
-          listJson.error ||
-          'List users failed (' + String(listRes.status) + ')';
-        throw new Error(errMsg);
-      }
-      const docs = listJson.documents || [];
-      for (let i = 0; i < docs.length; i++) {
-        const uid = userIdFromDocumentName(docs[i].name);
-        if (uid) userIds.push(uid);
-      }
-      pageToken = listJson.nextPageToken || '';
-      if (!pageToken) break;
-    }
-
-    const submissions = [];
-    for (let j = 0; j < userIds.length; j++) {
-      const userId = userIds[j];
-      const docUrl =
-        apiRoot +
-        '/artifacts/' +
-        encodeURIComponent(appId) +
-        '/users/' +
-        encodeURIComponent(userId) +
-        '/quiz_results/latest';
-      const docRes = await fetch(docUrl, { headers: { Authorization: 'Bearer ' + accessToken } });
-      if (docRes.status === 404) continue;
-      const docJson = await docRes.json().catch(function () {
-        return {};
-      });
-      if (!docRes.ok) {
-        if (docJson.error && docJson.error.code === 404) continue;
-        const errMsg2 =
-          (docJson.error && docJson.error.message) ||
-          'Read latest failed (' + String(docRes.status) + ')';
-        throw new Error(errMsg2);
-      }
-      const data = documentToPlain(docJson);
-      const row = { firebaseUserId: userId };
-      for (const key of Object.keys(data)) {
-        row[key] = data[key];
-      }
-      submissions.push(row);
-    }
+    const submissions = await fetchSubmissionsViaCollectionGroup(accessToken, projectId);
 
     submissions.sort(function (a, b) {
       return String(b.timestamp || '').localeCompare(String(a.timestamp || ''));
@@ -264,7 +274,14 @@ exports.handler = async function (event) {
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({ count: submissions.length, submissions: submissions }),
+      body: JSON.stringify({
+        count: submissions.length,
+        submissions: submissions,
+        meta: {
+          source: 'collection_group:quiz_results (all appIds under artifacts/.../users/.../quiz_results/latest)',
+          envAppIdHint: process.env.FIREBASE_ARTIFACTS_APP_ID || 'default-app-id',
+        },
+      }),
     };
   } catch (err) {
     console.error('admin-data error', err);
