@@ -1,6 +1,9 @@
 [build]
   # This tells Netlify where your functions are located.
   functions = "netlify/functions"
+  # 從 Netlify 環境變數產生 firebase-web-config.js（與 Cursor 注入 __firebase_config 等效）
+  command = "npm run build"
+  publish = "."
 
 [build.environment]
   NODE_VERSION = "20"

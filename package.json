@@ -5,7 +5,7 @@
   "description": "房仲16型人格測驗（Netlify 靜態站 + Functions）",
   "scripts": {
     "dev": "netlify dev",
-    "build": "echo Static site — no compile step"
+    "build": "node scripts/write-firebase-web-config.js"
   },
   "devDependencies": {
     "netlify-cli": "^19.0.0"
