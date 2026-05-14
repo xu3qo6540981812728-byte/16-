@@ -1,13 +1,7 @@
 /**
- * 管理者匯出：以 Firestore REST API 讀取
- * `artifacts/{appId}/users/*/quiz_results/latest`
- *
- * 不使用 firebase-admin（避免 gRPC 原生模組在 Netlify 上 502）。
- *
- * Netlify 環境變數：
- * - ADMIN_DASHBOARD_KEY
- * - FIREBASE_SERVICE_ACCOUNT_JSON_B64 或 FIREBASE_SERVICE_ACCOUNT_JSON
- * - FIREBASE_ARTIFACTS_APP_ID（選用，預設 default-app-id）
+ * Admin export: Firestore REST only (no firebase-admin).
+ * Env: ADMIN_DASHBOARD_KEY, FIREBASE_SERVICE_ACCOUNT_JSON_B64 or FIREBASE_SERVICE_ACCOUNT_JSON,
+ *      FIREBASE_ARTIFACTS_APP_ID (optional, default default-app-id)
  */
 const crypto = require('crypto');
 
@@ -21,13 +15,13 @@ function getServiceAccountJsonString() {
     const raw = String(b64).trim();
     if (/ReadAllBytes|ToBase64String|\[IO\.File\]|\[Convert\]::/i.test(raw)) {
       throw new Error(
-        'FIREBASE_SERVICE_ACCOUNT_JSON_B64 貼到的是 PowerShell「指令」，不是編碼結果。請在本機執行編碼後只貼輸出。'
+        'FIREBASE_SERVICE_ACCOUNT_JSON_B64: paste the Base64 output only, not the PowerShell command.'
       );
     }
     const decoded = Buffer.from(raw.replace(/\s/g, ''), 'base64').toString('utf8');
     const t = decoded.trimStart().replace(/^\uFEFF/, '');
     if (!t.startsWith('{')) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON_B64 解碼後不是 JSON（應以 { 開頭）。');
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON_B64 decodes to non-JSON (must start with {).');
     }
     return decoded;
   }
@@ -35,7 +29,7 @@ function getServiceAccountJsonString() {
 }
 
 function parseServiceAccountJson(raw) {
-  const trimmed = String(raw ?? '').trim().replace(/^\uFEFF/, '');
+  const trimmed = String(raw || '').trim().replace(/^\uFEFF/, '');
   if (!trimmed) return null;
   return JSON.parse(trimmed);
 }
@@ -55,22 +49,21 @@ function base64urlFromUtf8(str) {
 function createServiceAccountJwt(serviceAccount) {
   const header = base64urlFromUtf8(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
   const now = Math.floor(Date.now() / 1000);
-  const payload = base64urlFromUtf8(
-    JSON.stringify({
-      iss: serviceAccount.client_email,
-      sub: serviceAccount.client_email,
-      aud: 'https://oauth2.googleapis.com/token',
-      iat: now,
-      exp: now + 3500,
-      scope: 'https://www.googleapis.com/auth/datastore',
-    })
-  );
-  const signInput = `${header}.${payload}`;
+  const payloadJson = JSON.stringify({
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3500,
+    scope: 'https://www.googleapis.com/auth/datastore',
+  });
+  const payload = base64urlFromUtf8(payloadJson);
+  const signInput = header + '.' + payload;
   const sign = crypto.createSign('RSA-SHA256');
   sign.update(signInput);
   const sigBuf = sign.sign(serviceAccount.private_key);
   const signature = base64url(sigBuf);
-  return `${signInput}.${signature}`;
+  return signInput + '.' + signature;
 }
 
 async function getAccessToken(serviceAccount) {
@@ -84,16 +77,22 @@ async function getAccessToken(serviceAccount) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   });
-  const json = await res.json().catch(() => ({}));
+  const json = await res.json().catch(function () {
+    return {};
+  });
   if (!res.ok || !json.access_token) {
-    throw new Error(json.error_description || json.error || `OAuth token failed (${res.status})`);
+    const msg =
+      json.error_description ||
+      json.error ||
+      'OAuth token failed (' + String(res.status) + ')';
+    throw new Error(msg);
   }
   return json.access_token;
 }
 
 function firestoreValueToJs(v) {
   if (v == null || typeof v !== 'object') return v;
-  if ('nullValue' in v) return null;
+  if (Object.prototype.hasOwnProperty.call(v, 'nullValue')) return null;
   if (v.booleanValue !== undefined) return v.booleanValue;
   if (v.integerValue !== undefined) return parseInt(v.integerValue, 10);
   if (v.doubleValue !== undefined) return v.doubleValue;
@@ -128,22 +127,34 @@ function userIdFromDocumentName(name) {
   return parts[parts.length - 1] || '';
 }
 
-exports.handler = async (event) => {
+exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    return {
+      statusCode: 405,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
   }
 
   let body = {};
   try {
     body = JSON.parse(event.body || '{}');
-  } catch {
-    return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Invalid JSON' }) };
+  } catch (e) {
+    return {
+      statusCode: 400,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Invalid JSON' }),
+    };
   }
 
   const provided = (body.key || event.headers['x-admin-key'] || '').trim();
   const expected = (process.env.ADMIN_DASHBOARD_KEY || '').trim();
   if (!expected || provided !== expected) {
-    return { statusCode: 401, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Unauthorized' }) };
+    return {
+      statusCode: 401,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Unauthorized' }),
+    };
   }
 
   let saJson;
@@ -156,12 +167,13 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: e.message || 'Invalid service account env' }),
     };
   }
+
   if (!saJson) {
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        error: '未設定 FIREBASE_SERVICE_ACCOUNT_JSON_B64 或 FIREBASE_SERVICE_ACCOUNT_JSON。',
+        error: 'Set FIREBASE_SERVICE_ACCOUNT_JSON_B64 or FIREBASE_SERVICE_ACCOUNT_JSON.',
       }),
     };
   }
@@ -172,15 +184,20 @@ exports.handler = async (event) => {
       return {
         statusCode: 500,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: '服務帳戶 JSON 缺少 project_id、private_key 或 client_email。' }),
+        body: JSON.stringify({
+          error: 'Service account JSON missing project_id, private_key, or client_email.',
+        }),
       };
     }
 
     const accessToken = await getAccessToken(cred);
     const projectId = cred.project_id;
     const appId = getAppId();
-    const apiRoot = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
-    const listBase = `${apiRoot}/artifacts/${encodeURIComponent(appId)}/users`;
+    const apiRoot =
+      'https://firestore.googleapis.com/v1/projects/' +
+      projectId +
+      '/databases/(default)/documents';
+    const listBase = apiRoot + '/artifacts/' + encodeURIComponent(appId) + '/users';
 
     const userIds = [];
     let pageToken = '';
@@ -189,14 +206,21 @@ exports.handler = async (event) => {
       url.searchParams.set('pageSize', '300');
       if (pageToken) url.searchParams.set('pageToken', pageToken);
       const listRes = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: 'Bearer ' + accessToken },
       });
-      const listJson = await listRes.json().catch(() => ({}));
+      const listJson = await listRes.json().catch(function () {
+        return {};
+      });
       if (!listRes.ok) {
-        throw new Error(listJson.error?.message || listJson.error || `List users failed (${listRes.status})`);
+        const errMsg =
+          (listJson.error && listJson.error.message) ||
+          listJson.error ||
+          'List users failed (' + String(listRes.status) + ')';
+        throw new Error(errMsg);
       }
-      for (const doc of listJson.documents || []) {
-        const uid = userIdFromDocumentName(doc.name);
+      const docs = listJson.documents || [];
+      for (let i = 0; i < docs.length; i++) {
+        const uid = userIdFromDocumentName(docs[i].name);
         if (uid) userIds.push(uid);
       }
       pageToken = listJson.nextPageToken || '';
@@ -204,28 +228,43 @@ exports.handler = async (event) => {
     }
 
     const submissions = [];
-    for (const userId of userIds) {
-      const docUrl = `${apiRoot}/artifacts/${encodeURIComponent(appId)}/users/${encodeURIComponent(userId)}/quiz_results/latest`;
-      const docRes = await fetch(docUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+    for (let j = 0; j < userIds.length; j++) {
+      const userId = userIds[j];
+      const docUrl =
+        apiRoot +
+        '/artifacts/' +
+        encodeURIComponent(appId) +
+        '/users/' +
+        encodeURIComponent(userId) +
+        '/quiz_results/latest';
+      const docRes = await fetch(docUrl, { headers: { Authorization: 'Bearer ' + accessToken } });
       if (docRes.status === 404) continue;
-      const docJson = await docRes.json().catch(() => ({}));
+      const docJson = await docRes.json().catch(function () {
+        return {};
+      });
       if (!docRes.ok) {
-        if (docJson.error?.code === 404) continue;
-        throw new Error(docJson.error?.message || `Read latest failed (${docRes.status})`);
+        if (docJson.error && docJson.error.code === 404) continue;
+        const errMsg2 =
+          (docJson.error && docJson.error.message) ||
+          'Read latest failed (' + String(docRes.status) + ')';
+        throw new Error(errMsg2);
       }
       const data = documentToPlain(docJson);
-      submissions.push({
-        firebaseUserId: userId,
-        ...data,
-      });
+      const row = { firebaseUserId: userId };
+      for (const key of Object.keys(data)) {
+        row[key] = data[key];
+      }
+      submissions.push(row);
     }
 
-    submissions.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+    submissions.sort(function (a, b) {
+      return String(b.timestamp || '').localeCompare(String(a.timestamp || ''));
+    });
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({ count: submissions.length, submissions }),
+      body: JSON.stringify({ count: submissions.length, submissions: submissions }),
     };
   } catch (err) {
     console.error('admin-data error', err);
