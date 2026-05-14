@@ -2,6 +2,13 @@
   # This tells Netlify where your functions are located.
   functions = "netlify/functions"
 
+[build.environment]
+  NODE_VERSION = "20"
+
+# firebase-admin 含原生模組，勿讓預設 bundler 打進單檔，否則線上常出現 502
+[functions]
+  external_node_modules = ["firebase-admin"]
+
 # 本機 `npm run dev`（netlify dev）時明確指定靜態檔根目錄
 [dev]
   publish = "."
